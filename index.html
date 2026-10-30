@@ -92,11 +92,15 @@
                 <div id="chart-line" class="w-full"></div>
             </div>
 
-            <!-- Chart 3: Donut Chart -->
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-                <h2 class="text-lg font-bold text-slate-800 mb-1">Industry Distribution (2018)</h2>
-                <p class="text-xs text-slate-400 mb-4">Total emissions summed by industry type.</p>
-                <div id="chart-donut" class="w-full flex justify-center items-center" style="min-height: 250px;"></div>
+            <!-- Chart 3: Bar Chart for Top 10 Industries by CO₂ Emissions -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 lg:col-span-2">
+                <h2 class="text-lg font-bold text-slate-800 mb-1">Top 10 Industries by CO₂ Emissions</h2>
+                <p class="text-xs text-slate-400 mb-4">All countries combined. Drag the slider to change the year.</p>
+                <div id="chart-industry" class="w-full max-w-3xl mx-auto"></div>
+                <div class="text-center mt-2">
+                    <input id="industry-year" type="range" min="1995" max="2018" value="2018" class="w-1/2 align-middle">
+                    <b id="industry-year-label" class="ml-2">2018</b>
+                </div>
             </div>
 
             <!-- Electricity-sector chart: full page from electricity-raw-data-csv_path.html -->
@@ -257,61 +261,41 @@
                 .on("mouseout", hideTooltip);
         }
 
-        // 3. Donut Chart: Industry Distribution (2018)
-        function drawDonutChart(data) {
-            const width = 400, height = 300, margin = 20;
-            const radius = Math.min(width, height) / 2 - margin;
+        // 3. Top 10 industries by CO2 emissions, with a year slider
+        function drawIndustryChart() {
+            const W = 740, H = 380, left = 290, mt = 40;
+            const x = d3.scaleLinear([0, 14000], [left, W - 20]);   // fixed axis so years stay comparable
+            const y = d3.scaleBand().range([mt, H]).padding(0.4);
+            const svg = d3.select("#chart-industry").append("svg").attr("viewBox", `0 0 ${W} ${H}`);
 
-            // Group by industry and sort
-            const rollup = d3.rollup(data, v => d3.sum(v, d => d['2018']), d => d.INDUSTRY);
-            let chartData = Array.from(rollup, ([industry, total]) => ({ industry, total }))
-                                 .sort((a, b) => b.total - a.total);
+            svg.append("g").attr("transform", `translate(0,${mt})`)
+                .call(d3.axisTop(x).ticks(7, ",.0f").tickSize(-(H - mt)));
+            svg.append("text").attr("class", "axis-label").attr("x", (left + W - 20) / 2).attr("y", 14)
+                .attr("text-anchor", "middle").text("CO2 emissions");
+            svg.append("text").attr("class", "axis-label").attr("x", left - 6).attr("y", mt - 8)
+                .attr("text-anchor", "end").attr("font-weight", "bold").text("Industries");
 
-            // Keep top 4, lump rest in "Other"
-            if (chartData.length > 5) {
-                const top = chartData.slice(0, 4);
-                const otherTotal = d3.sum(chartData.slice(4), d => d.total);
-                top.push({ industry: "Other Industries", total: otherTotal });
-                chartData = top;
-            }
+            // keep only the "CO2 emissions" rows (skip multipliers/intensities) while parsing
+            d3.csv("c02_emissions_dataset.csv", d => d.INDICATOR.startsWith("CO2 emissions, Metric") ? d : null).then(rows => {
+                function update(year) {
+                    const top10 = [...d3.rollup(rows, v => d3.sum(v, d => +d[year]), d => d.INDUSTRY)]
+                        .sort((a, b) => b[1] - a[1]).slice(0, 10);
+                    y.domain(top10.map(d => d[0]));
 
-            const svg = d3.select("#chart-donut").append("svg")
-                .attr("viewBox", `0 0 ${width} ${height}`)
-                .append("g")
-                .attr("transform", `translate(${width / 2},${height / 2})`);
-
-            const color = d3.scaleOrdinal(["#3b82f6", "#10b981", "#f59e0b", "#6366f1", "#94a3b8"]);
-            const pie = d3.pie().value(d => d.total).sort(null);
-            const data_ready = pie(chartData);
-
-            const arc = d3.arc().innerRadius(radius * 0.5).outerRadius(radius * 0.8);
-            const arcHover = d3.arc().innerRadius(radius * 0.5).outerRadius(radius * 0.9);
-
-            svg.selectAll('path')
-                .data(data_ready)
-                .enter()
-                .append('path')
-                .attr('d', arc)
-                .attr('fill', d => color(d.data.industry))
-                .attr("stroke", "white")
-                .style("stroke-width", "2px")
-                .style("opacity", 0.9)
-                .on("mouseover", function(event, d) {
-                    d3.select(this).transition().duration(200).attr('d', arcHover).style("opacity", 1);
-                    showTooltip(event, `<strong>${d.data.industry}</strong><br/>Total: ${d.data.total.toFixed(0)}`);
-                })
-                .on("mouseout", function() {
-                    d3.select(this).transition().duration(200).attr('d', arc).style("opacity", 0.9);
-                    hideTooltip();
-                });
-                
-            // Optional basic legend or center text could go here
-            svg.append("text")
-                .attr("text-anchor", "middle")
-                .style("font-size", "14px")
-                .style("font-weight", "bold")
-                .style("fill", "#64748b")
-                .text("2018");
+                    const g = svg.selectAll("g.bar").data(top10, d => d[0]).join(enter => {
+                        const g = enter.append("g").attr("class", "bar").attr("transform", d => `translate(0,${y(d[0])})`);
+                        g.append("rect").attr("x", x(0)).attr("fill", "#156082");
+                        g.append("text").attr("x", left - 6).attr("text-anchor", "end").attr("font-size", 11).attr("fill", "#334155").text(d => d[0]);
+                        return g;
+                    });
+                    g.transition().duration(500).attr("transform", d => `translate(0,${y(d[0])})`);
+                    g.select("rect").transition().duration(500).attr("height", y.bandwidth()).attr("width", d => x(d[1]) - x(0));
+                    g.select("text").attr("y", y.bandwidth() / 2 + 4);
+                    d3.select("#industry-year-label").text(year);
+                }
+                d3.select("#industry-year").on("input", e => update(+e.target.value));
+                update(2018);
+            });
         }
 
         // 4. Area Chart: Interactive Total Area
