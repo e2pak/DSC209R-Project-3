@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Electricity-sector CO₂ emissions · Original IMF CSV</title>
+  <style>
+    :root { color-scheme:light dark; --bg:#fff; --fg:#20252c; --muted:#5e6874; --grid:#e0e5eb; --china:#286bb4; --usa:#ba550c; --india:#208049; }
+    @media(prefers-color-scheme:dark) { :root { --bg:#181b20; --fg:#ecedf0; --muted:#b1bac6; --grid:#3c4550; --china:#80b8fa; --usa:#ffad76; --india:#7ed7a6; } }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.5 system-ui,sans-serif; }
+    main { max-width:1100px; margin:32px auto; padding:0 24px 32px; }
+    h1 { font-size:clamp(22px,3vw,30px); font-weight:500; margin:0 0 8px; }
+    p { margin:8px 0 20px; }
+    .muted { color:var(--muted); }
+    .file-control { display:flex; flex-wrap:wrap; align-items:center; gap:8px 16px; margin-bottom:12px; }
+    .path-control { display:flex; flex-wrap:wrap; align-items:end; gap:10px; margin-top:20px; }
+    .path-control label { flex:1 1 360px; min-width:0; }
+    #csv-path { display:block; width:100%; margin-top:6px; padding:8px 10px; border:1px solid var(--grid); border-radius:4px; background:var(--bg); }
+    #load-csv { padding:8px 14px; border:1px solid var(--grid); border-radius:4px; background:var(--bg); cursor:pointer; }
+    #load-csv:disabled { cursor:wait; opacity:.6; }
+    #path-help { margin:8px 0 16px; }
+    input,button { font:inherit; color:inherit; }
+    input[type=file] { max-width:100%; }
+    #status { overflow-wrap:anywhere; }
+    .legend { display:flex; flex-wrap:wrap; gap:8px 24px; margin:16px 0; }
+    .legend button { border:0; background:transparent; padding:8px 0; display:flex; align-items:center; gap:8px; cursor:pointer; }
+    .legend button[aria-pressed=false] { opacity:.45; }
+    .swatch { width:26px; height:0; border-top:3px solid var(--series); }
+    .legend button:nth-child(2) .swatch { border-top-style:dashed; }
+    .legend button:nth-child(3) .swatch { border-top-style:dotted; }
+    svg { display:block; width:100%; touch-action:pan-y; }
+    svg text { fill:var(--fg); font:12px system-ui,sans-serif; }
+    .axis path,.axis line,.grid line { stroke:var(--grid); }
+    .grid path { display:none; }
+    table { border-collapse:collapse; width:100%; max-width:600px; margin:12px 0 24px; font-variant-numeric:tabular-nums; }
+    caption { text-align:left; font-weight:500; padding-bottom:8px; }
+    td,th { text-align:left; padding:8px 6px; border-bottom:1px solid var(--grid); }
+    td:last-child,th:last-child { text-align:right; }
+    a { color:var(--china); }
+    details { margin-top:20px; }
+    code { overflow-wrap:anywhere; }
+    .error { color:light-dark(#a22828,#ffa5a5); }
+    @media(max-width:500px) { main { margin:20px auto; padding:0 12px 24px; } }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Electricity-sector emissions, 1995–2018</h1>
+  <p class="muted">China, United States and India · Electricity, gas, steam and air conditioning supply</p>
+  <form id="csv-path-form" class="path-control">
+    <label for="csv-path">CSV path or URL
+      <input id="csv-path" type="text" spellcheck="false" required aria-describedby="path-help">
+    </label>
+    <button id="load-csv" type="submit">Load CSV</button>
+  </form>
+  <p id="path-help" class="muted">The default uses the <code>data/</code> folder beside this HTML. Edit the path for your copy, then select Load CSV. A folder path ending in <code>/</code> uses the original CSV filename. For a Windows file path or a double-clicked HTML file, choose the CSV below.</p>
+  <div class="file-control">
+    <label for="csv-file">Open original IMF CSV:</label>
+    <input id="csv-file" type="file" accept=".csv,text/csv">
+  </div>
+  <p id="status" class="muted" role="status" aria-live="polite">Loading D3… Internet access is needed for the requested D3 import.</p>
+  <div class="legend" aria-label="Visible economies"></div>
+  <div id="chart"></div>
+  <p id="hint" class="muted" hidden>Hover or tap to inspect an observed year. Select a legend label to hide or show a line.</p>
+  <table id="observations" hidden>
+    <caption>Original CSV values for <span id="selected-year">2018</span></caption>
+    <thead><tr><th scope="col">Economy</th><th scope="col">CO₂ (million tonnes)</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <p class="muted">Units follow the IMF documentation: millions of tonnes of CO₂ from fuel combustion. The CSV indicator's “Metric ton” label is inconsistent with that documentation.</p>
+  <details>
+    <summary>Data source and columns</summary>
+    <p><a href="https://data.imf.org/en/datasets/IMF.STA:CO2EEIEM">IMF Carbon Emission Per Unit of Output</a>. This page reads the original CSV, with all columns and rows intact. No precomputed chart dataset is used.</p>
+    <p>Rows are selected using <code>COUNTRY</code>, <code>INDUSTRY</code> and <code>INDICATOR</code>. The chart reads the original <code>1995</code> through <code>2018</code> columns directly. Values are converted from CSV text to numbers only to position marks; the table displays the original cell text.</p>
+    <p>The editable path defaults to <code>./data/</code> plus the original filename. Because this HTML is in <code>project3</code>, that resolves to the project's <code>data</code> directory. A teammate can keep the same layout or enter a different relative path or HTTP(S) URL. Successful path choices are remembered in this browser.</p>
+    <p>When opened through a local web server, the page automatically loads the CSV from the selected path. When opened by double-clicking the HTML file, use the file chooser above to select the CSV. Browsers require that chooser for local Windows paths. The D3 library is imported from the internet.</p>
+  </details>
+</main>
+<script type="module">
+  import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
+
+  // Original file, copied byte-for-byte into data/. No cleaned or reduced CSV is used.
+  // To change the initial location in the source, edit DEFAULT_CSV_PATH.
+  // It is relative to this HTML, so it works on your teammate's computer too.
+  const CSV_FILENAME = "dataset_2026-10-28T09_19_48.272547089Z_DEFAULT_INTEGRATION_IMF.STA_CO2EEIEM_2.0.2.csv";
+  const DEFAULT_CSV_PATH = "./data/" + CSV_FILENAME;
+  const PATH_STORAGE_KEY = "imf-electricity-raw-csv-path";
+  // Keep the source spelling exactly, including its "Electriciy" typo.
+  const INDUSTRY = "Electriciy, gas, steam and air conditioning supply";
+  const INDICATOR = "CO2 emissions, Metric ton of CO₂";
+  const economies = [
+    {country:"China, People's Republic of", label:"China", color:"var(--china)", dash:null},
+    {country:"United States", label:"United States", color:"var(--usa)", dash:"8 5"},
+    {country:"India", label:"India", color:"var(--india)", dash:"2 5"}
+  ];
+  const chart = document.getElementById("chart");
+  const status = document.getElementById("status");
+  const table = document.getElementById("observations");
+  const pathInput = document.getElementById("csv-path");
+  const loadButton = document.getElementById("load-csv");
+  pathInput.value = DEFAULT_CSV_PATH;
+  try { pathInput.value = localStorage.getItem(PATH_STORAGE_KEY) || DEFAULT_CSV_PATH; }
+  catch { /* Storage may be unavailable; the editable default still works. */ }
+  let selectedRows = []; // References to the original parsed CSV row objects.
+  let years = [];
+  let selectedYear = 2018;
+  const visible = new Set(economies.map(d => d.country));
+  let loadSequence = 0;
+
+  function showError(message) {
+    status.textContent = message + (selectedRows.length ? " The chart still shows the previously loaded CSV." : "");
+    status.classList.add("error");
+    status.setAttribute("role", "alert");
+  }
+
+  function loadRows(rawRows, filename) {
+    const required = ["COUNTRY", "INDUSTRY", "INDICATOR"];
+    if (!required.every(column => rawRows.columns.includes(column))) {
+      throw new Error("This file is missing COUNTRY, INDUSTRY or INDICATOR. Select the original IMF CSV.");
+    }
+    const nextYears = rawRows.columns.filter(column => /^\d{4}$/.test(column) && +column >= 1995 && +column <= 2018).map(Number).sort(d3.ascending);
+    if (nextYears.length !== 24) throw new Error("The CSV must contain every annual column from 1995 through 2018.");
+    // Filtering selects rows without changing their original wide-format structure.
+    const matches = rawRows.filter(row => row.INDUSTRY === INDUSTRY && row.INDICATOR === INDICATOR && economies.some(d => d.country === row.COUNTRY));
+    const nextRows = economies.map(economy => {
+      const countryRows = matches.filter(row => row.COUNTRY === economy.country);
+      if (countryRows.length !== 1) throw new Error(`Expected one matching emissions row for ${economy.label}; found ${countryRows.length}.`);
+      return countryRows[0];
+    });
+    for (const row of nextRows) {
+      for (const year of nextYears) {
+        if (row[String(year)].trim() === "" || !Number.isFinite(Number(row[String(year)]))) {
+          throw new Error(`Missing or invalid observation: ${row.COUNTRY}, ${year}.`);
+        }
+      }
+    }
+    // Commit only after validation; a failed path cannot replace good chart data.
+    selectedRows = nextRows;
+    years = nextYears;
+    status.classList.remove("error");
+    status.setAttribute("role", "status");
+    status.textContent = `Loaded original CSV: ${rawRows.length.toLocaleString()} rows, ${rawRows.columns.length} columns. Selected 3 source rows and 24 annual columns. File: ${filename}`;
+    table.hidden = false;
+    document.getElementById("hint").hidden = false;
+    draw();
+  }
+
+  const buttons = d3.select(".legend").selectAll("button").data(economies).join("button")
+    .attr("type", "button").attr("aria-pressed", "true")
+    .on("click", (event, economy) => {
+      if (visible.has(economy.country) && visible.size === 1) return;
+      if (visible.has(economy.country)) visible.delete(economy.country); else visible.add(economy.country);
+      buttons.attr("aria-pressed", d => String(visible.has(d.country)));
+      draw();
+    });
+  buttons.append("span").attr("class", "swatch").style("--series", d => d.color).attr("aria-hidden", "true");
+  buttons.append("span").text(d => d.label);
+
+  function updateTable() {
+    document.getElementById("selected-year").textContent = selectedYear;
+    const rows = selectedRows.filter(row => visible.has(row.COUNTRY));
+    const tr = d3.select("#observations tbody").selectAll("tr").data(rows, row => row.COUNTRY).join("tr");
+    tr.selectAll("td").data(row => [economies.find(d => d.country === row.COUNTRY).label, row[String(selectedYear)]]).join("td").text(value => value);
+  }
+
+  function draw() {
+    if (!selectedRows.length) return;
+    const rows = selectedRows.filter(row => visible.has(row.COUNTRY));
+    const width = chart.getBoundingClientRect().width;
+    const height = width < 500 ? 390 : 440;
+    const margin = {top:24, right:18, bottom:60, left:76};
+    const right = width - margin.right, bottom = height - margin.bottom;
+    const x = d3.scaleLinear().domain(d3.extent(years)).range([margin.left + 4, right - 4]);
+    const extent = d3.extent(rows.flatMap(row => years.map(year => Number(row[String(year)]))));
+    const y = d3.scaleLinear().domain([Math.min(0, extent[0]), extent[1] * 1.12]).nice().range([bottom - 4, margin.top + 4]);
+    const svg = d3.select(chart).selectAll("svg").data([null]).join("svg")
+      .attr("viewBox", `0 0 ${width} ${height}`).attr("height", height).attr("role", "img")
+      .attr("aria-label", "Annual electricity-sector CO₂ emissions in China, the United States and India, read directly from the original IMF CSV.");
+    svg.selectAll("*").remove();
+    svg.append("title").text("Electricity-sector emissions, 1995–2018");
+    svg.append("rect").attr("x", margin.left).attr("y", margin.top).attr("width", right - margin.left).attr("height", bottom - margin.top).attr("fill", "none").attr("stroke", "var(--grid)");
+    svg.append("g").attr("class", "grid").attr("transform", `translate(${margin.left},0)`)
+      .call(d3.axisLeft(y).ticks(5).tickSize(-(right-margin.left)).tickFormat(""));
+    const ticks = width < 500 ? [1995, 2003, 2011, 2018] : [1995, 2000, 2005, 2010, 2015, 2018];
+    svg.append("g").attr("class", "axis").attr("transform", `translate(0,${bottom})`)
+      .call(d3.axisBottom(x).tickValues(ticks).tickFormat(d3.format("d")).tickSizeOuter(0));
+    svg.append("g").attr("class", "axis").attr("transform", `translate(${margin.left},0)`)
+      .call(d3.axisLeft(y).ticks(5).tickFormat(d3.format(",.0f")).tickSizeOuter(0));
+    svg.append("text").attr("x", (margin.left+right)/2).attr("y", height-12).attr("text-anchor", "middle").text("Year");
+    svg.append("text").attr("transform", `translate(18,${(margin.top+bottom)/2}) rotate(-90)`)
+      .attr("text-anchor", "middle").text("CO₂ (million tonnes)");
+
+    // The line generator reads each year cell directly from the original CSV row.
+    // No totals, indices, rescaling of source units or hard-coded observation arrays.
+    for (const row of rows) {
+      const economy = economies.find(d => d.country === row.COUNTRY);
+      const line = d3.line().x(year => x(year)).y(year => y(Number(row[String(year)])));
+      svg.append("path").datum(years).attr("class", "emissions-line").attr("data-country", row.COUNTRY)
+        .attr("d", line).attr("fill", "none").attr("stroke", economy.color).attr("stroke-width", 2.5).attr("stroke-dasharray", economy.dash);
+      svg.append("circle").attr("cx", x(2018)).attr("cy", y(Number(row["2018"]))).attr("r", 3).attr("fill", economy.color);
+      svg.append("text").attr("x", x(2018)-7).attr("y", y(Number(row["2018"]))-10).attr("text-anchor", "end").text(row["2018"]);
+    }
+    const guide = svg.append("line").attr("class", "hover-guide").attr("y1", margin.top).attr("y2", bottom).attr("stroke", "var(--muted)").attr("visibility", "hidden");
+    const markers = svg.append("g");
+    function inspect(event) {
+      const [px] = d3.pointer(event, svg.node());
+      const yearIndex = d3.bisector(year => year).center(years, x.invert(Math.max(margin.left, Math.min(right, px))));
+      selectedYear = years[yearIndex];
+      guide.attr("x1", x(selectedYear)).attr("x2", x(selectedYear)).attr("visibility", "visible");
+      markers.selectAll("circle").data(rows, row => row.COUNTRY).join("circle")
+        .attr("cx", x(selectedYear)).attr("cy", row => y(Number(row[String(selectedYear)]))).attr("r", 4)
+        .attr("fill", row => economies.find(d => d.country === row.COUNTRY).color);
+      updateTable();
+    }
+    svg.append("rect").attr("x", margin.left).attr("y", margin.top).attr("width", right-margin.left).attr("height", bottom-margin.top)
+      .attr("fill", "transparent").on("pointermove", inspect).on("pointerdown", inspect);
+    updateTable();
+  }
+
+  function resolveCsvPath(value) {
+    let entered = value.trim();
+    if ((entered.startsWith('"') && entered.endsWith('"')) || (entered.startsWith("'") && entered.endsWith("'"))) entered = entered.slice(1, -1).trim();
+    if (!entered) throw new Error("Enter a CSV path or select a CSV file below.");
+    if (/^[a-z]:[\\/]/i.test(entered) || entered.startsWith("\\\\") || entered.startsWith("//") || /^file:/i.test(entered)) {
+      throw new Error("A browser cannot load a Windows disk path directly. Select that CSV with the file chooser below, or use a relative path through a local web server.");
+    }
+    entered = entered.replaceAll("\\", "/");
+    const url = new URL(entered, document.baseURI);
+    if (url.pathname.endsWith("/")) url.pathname += CSV_FILENAME;
+    if (url.protocol !== "http:" && url.protocol !== "https:") {
+      throw new Error("For a double-clicked HTML file, select the CSV below. Editable path loading works when this page is opened through a local web server.");
+    }
+    return url;
+  }
+
+  async function loadFromPath() {
+    const sequence = ++loadSequence;
+    loadButton.disabled = true;
+    status.classList.remove("error");
+    status.setAttribute("role", "status");
+    status.textContent = "Loading CSV from the selected path…";
+    try {
+      const entered = pathInput.value;
+      const url = resolveCsvPath(entered);
+      const rawRows = await d3.csv(url.href);
+      if (sequence !== loadSequence) return;
+      loadRows(rawRows, entered);
+      try { localStorage.setItem(PATH_STORAGE_KEY, entered); } catch { /* Optional preference. */ }
+    } catch (error) {
+      if (sequence === loadSequence) showError("CSV loading failed. " + error.message);
+    } finally {
+      if (sequence === loadSequence) loadButton.disabled = false;
+    }
+  }
+
+  document.getElementById("csv-path-form").addEventListener("submit", event => {
+    event.preventDefault();
+    loadFromPath();
+  });
+  document.getElementById("csv-file").addEventListener("change", async event => {
+    const file = event.target.files[0];
+    if (!file) return;
+    const sequence = ++loadSequence;
+    loadButton.disabled = false;
+    try {
+      const rawRows = d3.csvParse(await file.text());
+      if (sequence === loadSequence) loadRows(rawRows, file.name);
+    } catch (error) { if (sequence === loadSequence) showError(error.message); }
+  });
+  new ResizeObserver(draw).observe(chart);
+
+  if (location.protocol === "file:") {
+    status.textContent = "Select the original CSV above to display the chart. Browsers prevent automatic loading of a neighboring CSV when an HTML file is opened by double-clicking.";
+  } else {
+    loadFromPath();
+  }
+</script>
+</body>
+</html>
