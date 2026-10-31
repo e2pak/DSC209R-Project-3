@@ -8,6 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- D3.js v7 -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
+	<script type="module" src="./Stacked_graph.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -164,8 +165,8 @@
 
             drawBarChart(rawData);
             drawLineChart(rawData);
-            drawDonutChart(rawData);
-            drawAreaChart(rawData);
+            //drawDonutChart(rawData);
+            //drawAreaChart(rawData);
         }
 
         // 1. Bar Chart: Avg CO2 by Country (2018)
@@ -299,99 +300,7 @@
         }
 
         // 4. Area Chart: Interactive Total Area
-        function drawAreaChart(data) {
-            const margin = {top: 20, right: 30, bottom: 30, left: 60};
-            const width = 1000 - margin.left - margin.right;
-            const height = 400 - margin.top - margin.bottom;
-
-            const trendData = yearsList.map(year => ({
-                year: +year,
-                total: d3.sum(data, d => d[year])
-            }));
-
-            const svg = d3.select("#chart-area").append("svg")
-                .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
-                .append("g")
-                .attr("transform", `translate(${margin.left},${margin.top})`);
-
-            const x = d3.scaleLinear().domain(d3.extent(trendData, d => d.year)).range([0, width]);
-            const y = d3.scaleLinear().domain([0, d3.max(trendData, d => d.total) * 1.1]).range([height, 0]);
-
-            // Axis
-            svg.append("g").attr("class", "grid-line").call(d3.axisLeft(y).tickSize(-width).tickFormat("").ticks(6));
-            svg.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(x).tickFormat(d3.format("d")).ticks(12));
-            svg.append("g").call(d3.axisLeft(y));
-
-            const area = d3.area()
-                .x(d => x(d.year))
-                .y0(height)
-                .y1(d => y(d.total))
-                .curve(d3.curveMonotoneX);
-
-            svg.append("path")
-                .datum(trendData)
-                .attr("fill", "url(#area-gradient)")
-                .attr("d", area);
-
-            // Gradient defs
-            const defs = svg.append("defs");
-            const gradient = defs.append("linearGradient")
-                .attr("id", "area-gradient")
-                .attr("x1", "0%").attr("y1", "0%")
-                .attr("x2", "0%").attr("y2", "100%");
-            gradient.append("stop").attr("offset", "0%").attr("stop-color", "rgba(16, 185, 129, 0.6)");
-            gradient.append("stop").attr("offset", "100%").attr("stop-color", "rgba(16, 185, 129, 0.05)");
-
-            const line = d3.line()
-                .x(d => x(d.year))
-                .y(d => y(d.total))
-                .curve(d3.curveMonotoneX);
-
-            svg.append("path")
-                .datum(trendData)
-                .attr("fill", "none")
-                .attr("stroke", "#10b981")
-                .attr("stroke-width", 2)
-                .attr("d", line);
-
-            // Interactive Elements
-            const focusGroup = svg.append("g").style("display", "none");
-            
-            const verticalLine = focusGroup.append("line")
-                .attr("y1", 0).attr("y2", height)
-                .attr("stroke", "#64748b").attr("stroke-width", 1).attr("stroke-dasharray", "4,4");
-                
-            const focusCircle = focusGroup.append("circle")
-                .attr("r", 5).attr("fill", "#fff").attr("stroke", "#10b981").attr("stroke-width", 2);
-
-            const bisect = d3.bisector(d => d.year).left;
-
-            svg.append("rect")
-                .attr("width", width)
-                .attr("height", height)
-                .style("fill", "none")
-                .style("pointer-events", "all")
-                .on("mouseover", () => focusGroup.style("display", null))
-                .on("mouseout", () => {
-                    focusGroup.style("display", "none");
-                    hideTooltip();
-                })
-                .on("mousemove", function(event) {
-                    const x0 = x.invert(d3.pointer(event)[0]);
-                    const i = bisect(trendData, x0, 1);
-                    const d0 = trendData[i - 1];
-                    const d1 = trendData[i];
-                    
-                    if (!d0 || !d1) return;
-                    
-                    const d = x0 - d0.year > d1.year - x0 ? d1 : d0;
-                    
-                    focusGroup.attr("transform", `translate(${x(d.year)},0)`);
-                    focusCircle.attr("cy", y(d.total));
-                    
-                    showTooltip(event, `<div class="font-bold text-center mb-1 border-b border-slate-700 pb-1">${d.year}</div>Total Emissions: <span class="text-emerald-400 font-mono">${d.total.toFixed(2)}</span>`);
-                });
-        }
+        
     </script>
 </body>
 </html>
