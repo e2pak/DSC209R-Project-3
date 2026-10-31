@@ -1,307 +1,534 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CO2 Emissions Multipliers Visualization</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- D3.js v7 -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
-	<script type="module" src="./Stacked_graph.js"></script>
+    <script type="module" src="./Stacked_graph.js"></script>
+    <script type="module" src="./Stacked_graph.js"></script>
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f8fafc;
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #f8fafc;
+      }
+
+      .tooltip {
+        position: absolute;
+        text-align: left;
+        padding: 8px 12px;
+        font-size: 12px;
+        background: rgba(15, 23, 42, 0.95);
+        color: #fff;
+        border-radius: 6px;
+        pointer-events: none;
+        opacity: 0;
+        transition:
+          opacity 0.2s ease,
+          transform 0.1s ease;
+        box-shadow:
+          0 4px 6px -1px rgba(0, 0, 0, 0.1),
+          0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        z-index: 50;
+      }
+
+      svg {
+        width: 100%;
+        height: auto;
+        overflow: visible;
+      }
+
+      .axis-label {
+        font-size: 12px;
+        fill: #64748b;
+        font-weight: 500;
+      }
+      .tick text {
+        font-size: 11px;
+        fill: #64748b;
+      }
+      .tick line {
+        stroke: #e2e8f0;
+      }
+      .domain {
+        stroke: #cbd5e1;
+      }
+      .grid-line {
+        stroke: #f1f5f9;
+        stroke-dasharray: 4;
+      }
+
+      /* Loader Animation */
+      .loader {
+        border: 4px solid #f1f5f9;
+        border-top: 4px solid #3b82f6;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
         }
-        
-        .tooltip {
-            position: absolute;
-            text-align: left;
-            padding: 8px 12px;
-            font-size: 12px;
-            background: rgba(15, 23, 42, 0.95);
-            color: #fff;
-            border-radius: 6px;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.2s ease, transform 0.1s ease;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            z-index: 50;
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .hidden-section {
+        display: none !important;
+      }
+
+      #countries {
+        width: 100%;
+        border: none;
+        background: transparent;
+      }
+
+      @supports (appearance: base-select) {
+        #countries {
+          appearance: base-select;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          padding: 0;
         }
 
-        svg {
-            width: 100%;
-            height: auto;
-            overflow: visible;
+        #countries option {
+          display: block;
+          padding: 10px 12px;
+          font-size: 0.85rem;
+          color: #cbd5e1;
+          background: #1e293b;
+          border: 1px solid #334155;
+          border-radius: 8px;
+          cursor: pointer;
+          transition:
+            background 0.15s,
+            border-color 0.15s,
+            color 0.15s;
         }
 
-        .axis-label { font-size: 12px; fill: #64748b; font-weight: 500; }
-        .tick text { font-size: 11px; fill: #64748b; }
-        .tick line { stroke: #e2e8f0; }
-        .domain { stroke: #cbd5e1; }
-        .grid-line { stroke: #f1f5f9; stroke-dasharray: 4; }
+        #countries option:hover {
+          border-color: #10b981;
+        }
 
-        /* Loader Animation */
-        .loader {
-            border: 4px solid #f1f5f9;
-            border-top: 4px solid #3b82f6;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
+        #countries option:checked {
+          background: rgba(16, 185, 129, 0.15);
+          border-color: #10b981;
+          color: #6ee7b7;
+          font-weight: 600;
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+
+        #countries option::checkmark {
+          display: none;
         }
-        
-        .hidden-section { display: none !important; }
+      }
     </style>
-</head>
-<body class="p-4 md:p-8 text-slate-800">
-
+  </head>
+  <body class="p-4 md:p-8 text-slate-800">
     <div class="max-w-7xl mx-auto relative">
-        <header class="mb-8 text-center">
-            <h1 class="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight mb-2">CO₂ Emissions Dashboard</h1>
-            <p class="text-slate-500">Metric tons of CO₂ emissions per $1 million USD of output</p>
-        </header>
+      <header class="mb-8 text-center">
+        <h1
+          class="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight mb-2"
+        >
+          CO₂ Emissions Dashboard
+        </h1>
+        <p class="text-slate-500">
+          Metric tons of CO₂ emissions per $1 million USD of output
+        </p>
+      </header>
 
-        <!-- Loading State -->
-        <div id="loader-container" class="flex flex-col items-center justify-center py-20">
-            <div class="loader mb-4"></div>
-            <p id="loader-text" class="text-slate-500 font-medium animate-pulse">Loading data...</p>
+      <!-- Loading State -->
+      <div
+        id="loader-container"
+        class="flex flex-col items-center justify-center py-20"
+      >
+        <div class="loader mb-4"></div>
+        <p id="loader-text" class="text-slate-500 font-medium animate-pulse">
+          Loading data...
+        </p>
+      </div>
+
+      <!-- Tooltip container -->
+      <div id="tooltip" class="tooltip"></div>
+
+      <!-- Dashboard Grid -->
+      <div
+        id="dashboard-container"
+        class="hidden-section grid grid-cols-1 lg:grid-cols-2 gap-6"
+      >
+        <!-- Chart 1: Bar Chart -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+          <h2 class="text-lg font-bold text-slate-800 mb-1">
+            Avg CO2 Emissions by Country (2018)
+          </h2>
+          <p class="text-xs text-slate-400 mb-4">
+            Average carbon multiplier by country in 2018.
+          </p>
+          <div id="chart-bar" class="w-full"></div>
         </div>
 
-        <!-- Tooltip container -->
-        <div id="tooltip" class="tooltip"></div>
-
-        <!-- Dashboard Grid -->
-        <div id="dashboard-container" class="hidden-section grid grid-cols-1 lg:grid-cols-2 gap-6">
-            
-            <!-- Chart 1: Bar Chart -->
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-                <h2 class="text-lg font-bold text-slate-800 mb-1">Avg CO2 Emissions by Country (2018)</h2>
-                <p class="text-xs text-slate-400 mb-4">Average carbon multiplier by country in 2018.</p>
-                <div id="chart-bar" class="w-full"></div>
-            </div>
-
-            <!-- Chart 2: Line Chart -->
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-                <h2 class="text-lg font-bold text-slate-800 mb-1">Overall Emissions Trend (1995-2018)</h2>
-                <p class="text-xs text-slate-400 mb-4">Sum of all dataset emissions over time.</p>
-                <div id="chart-line" class="w-full"></div>
-            </div>
-
-            <!-- Chart 3: Bar Chart for Top 10 Industries by CO₂ Emissions -->
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 lg:col-span-2">
-                <h2 class="text-lg font-bold text-slate-800 mb-1">Top 10 Industries by CO₂ Emissions</h2>
-                <p class="text-xs text-slate-400 mb-4">All countries combined. Drag the slider to change the year.</p>
-                <div id="chart-industry" class="w-full max-w-3xl mx-auto"></div>
-                <div class="text-center mt-2">
-                    <input id="industry-year" type="range" min="1995" max="2018" value="2018" class="w-1/2 align-middle">
-                    <b id="industry-year-label" class="ml-2">2018</b>
-                </div>
-            </div>
-
-            <!-- Electricity-sector chart: full page from electricity-raw-data-csv_path.html -->
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 lg:col-span-2 overflow-hidden">
-                <iframe
-                    src="electricity-raw-data-csv_path.html"
-                    title="Electricity-sector CO₂ emissions, 1995–2018"
-                    class="w-full border-0 block"
-                    style="height: 1180px;"
-                ></iframe>
-            </div>
-
-            <!-- Chart 5: Area Chart (Full Width) -->
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 lg:col-span-2">
-                <h2 class="text-lg font-bold text-slate-800 mb-1">Total Emissions Area (1995-2018)</h2>
-                <p class="text-xs text-slate-400 mb-4">Interactive cumulative view of total recorded emissions over time.</p>
-                <div id="chart-area" class="w-full relative"></div>
-            </div>
-
+        <!-- Chart 2: Line Chart -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+          <h2 class="text-lg font-bold text-slate-800 mb-1">
+            Overall Emissions Trend (1995-2018)
+          </h2>
+          <p class="text-xs text-slate-400 mb-4">
+            Sum of all dataset emissions over time.
+          </p>
+          <div id="chart-line" class="w-full"></div>
         </div>
+
+        <!-- Chart 3: Bar Chart for Top 10 Industries by CO₂ Emissions -->
+        <div
+          class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 lg:col-span-2"
+        >
+          <h2 class="text-lg font-bold text-slate-800 mb-1">
+            Top 10 Industries by CO₂ Emissions
+          </h2>
+          <p class="text-xs text-slate-400 mb-4">
+            All countries combined. Drag the slider to change the year.
+          </p>
+          <div id="chart-industry" class="w-full max-w-3xl mx-auto"></div>
+          <div class="text-center mt-2">
+            <input
+              id="industry-year"
+              type="range"
+              min="1995"
+              max="2018"
+              value="2018"
+              class="w-1/2 align-middle"
+            />
+            <b id="industry-year-label" class="ml-2">2018</b>
+          </div>
+        </div>
+
+        <!-- Electricity-sector chart: full page from electricity-raw-data-csv_path.html -->
+        <div
+          class="bg-white rounded-2xl shadow-sm border border-slate-100 lg:col-span-2 overflow-hidden"
+        >
+          <iframe
+            src="electricity-raw-data-csv_path.html"
+            title="Electricity-sector CO₂ emissions, 1995–2018"
+            class="w-full border-0 block"
+            style="height: 1180px"
+          ></iframe>
+        </div>
+
+        <!-- Chart 5: Area Chart (Full Width) -->
+        <div
+          class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 lg:col-span-2"
+        >
+          <h2 class="text-lg font-bold text-slate-800 mb-1">
+            Total Emissions Area (1995-2018)
+          </h2>
+          <p class="text-xs text-slate-400 mb-4">
+            Interactive cumulative view of total recorded emissions over time.
+          </p>
+          <div id="chart-area" class="w-full relative"></div>
+        </div>
+      </div>
     </div>
 
     <script>
-        const tooltip = d3.select("#tooltip");
+      const tooltip = d3.select("#tooltip");
 
-        function showTooltip(event, htmlContent) {
-            tooltip.style("opacity", 1)
-                   .html(htmlContent)
-                   .style("left", (event.pageX + 15) + "px")
-                   .style("top", (event.pageY - 15) + "px");
-        }
-        function hideTooltip() { tooltip.style("opacity", 0); }
+      function showTooltip(event, htmlContent) {
+        tooltip
+          .style("opacity", 1)
+          .html(htmlContent)
+          .style("left", event.pageX + 15 + "px")
+          .style("top", event.pageY - 15 + "px");
+      }
+      function hideTooltip() {
+        tooltip.style("opacity", 0);
+      }
 
-        const fallbackDataStr = `"COUNTRY","INDUSTRY","1995","1996","1997","1998","1999","2000","2001","2002","2003","2004","2005","2006","2007","2008","2009","2010","2011","2012","2013","2014","2015","2016","2017","2018"
+      const fallbackDataStr = `"COUNTRY","INDUSTRY","1995","1996","1997","1998","1999","2000","2001","2002","2003","2004","2005","2006","2007","2008","2009","2010","2011","2012","2013","2014","2015","2016","2017","2018"
 "Austria","Accommodation and food services",98.43,110.60,122.07,118.72,119.45,115.71,124.63,110.87,99.17,81.60,73.72,66.65,53.53,47.88,47.94,45.68,40.65,40.49,38.58,35.78,42.67,41.35,40.61,36.68
 "Belgium","Other manufacturing",315.92,361.00,427.84,492.42,522.77,487.99,676.05,490.25,246.09,146.82,156.94,192.94,140.41,128.31,92.57,104.69,76.37,96.10,88.74,74.11,78.63,79.03,75.19,68.34
 "Austria","Wholesale and retail trade",68.22,77.35,88.18,86.16,89.97,88.82,100.90,92.69,82.83,70.29,63.22,58.64,48.70,43.65,44.21,42.58,38.09,39.11,37.80,34.87,40.43,39.94,39.32,35.05
 "Belgium","Human health and social work",91.21,100.10,102.52,101.70,93.04,103.05,108.88,106.60,89.25,77.27,73.01,67.13,57.18,43.64,49.98,52.91,42.79,43.92,40.85,36.29,54.62,46.71,43.44,40.85
 "Argentina","Other non-metallic mineral products",852.94,811.51,836.47,857.37,834.87,741.22,702.11,1603.05,1539.06,1539.83,1346.20,1180.77,1016.53,925.00,944.98,790.05,689.43,626.46,580.38,626.48,576.14,606.19,551.86,669.00`;
 
-        // Years from 1995 to 2018
-        const yearsList = d3.range(1995, 2019).map(String);
+      // Years from 1995 to 2018
+      const yearsList = d3.range(1995, 2019).map(String);
 
-        // Fetch Data
-        d3.csv('CO2_emissions.csv').then(data => {
-            initDashboard(data);
-        }).catch(err => {
-            console.warn("Could not load external CSV file, falling back to sample data.", err);
-            const fallbackData = d3.csvParse(fallbackDataStr);
-            initDashboard(fallbackData);
+      // Fetch Data
+      d3.csv("CO2_emissions.csv")
+        .then((data) => {
+          initDashboard(data);
+        })
+        .catch((err) => {
+          console.warn(
+            "Could not load external CSV file, falling back to sample data.",
+            err,
+          );
+          const fallbackData = d3.csvParse(fallbackDataStr);
+          initDashboard(fallbackData);
         });
 
-        function initDashboard(rawData) {
-            document.getElementById('loader-container').style.display = 'none';
-            document.getElementById('dashboard-container').classList.remove('hidden-section');
-            
-            // Clean/process data for numbers
-            rawData.forEach(d => {
-                yearsList.forEach(yr => d[yr] = +d[yr] || 0);
-            });
+      function initDashboard(rawData) {
+        document.getElementById("loader-container").style.display = "none";
+        document
+          .getElementById("dashboard-container")
+          .classList.remove("hidden-section");
 
-            drawBarChart(rawData);
-            drawLineChart(rawData);
-            drawDonutChart(rawData);
-            drawAreaChart(rawData);
-            drawIndustryChart(rawData);
-        }
+        // Clean/process data for numbers
+        rawData.forEach((d) => {
+          yearsList.forEach((yr) => (d[yr] = +d[yr] || 0));
+        });
 
-        // 1. Bar Chart: Avg CO2 by Country (2018)
-        function drawBarChart(data) {
-            const margin = {top: 20, right: 20, bottom: 40, left: 60};
-            const width = 500 - margin.left - margin.right;
-            const height = 300 - margin.top - margin.bottom;
+        drawBarChart(rawData);
+        drawLineChart(rawData);
+        drawDonutChart(rawData);
+        drawAreaChart(rawData);
+        drawIndustryChart(rawData);
+      }
 
-            const rollup = d3.rollup(data, v => d3.mean(v, d => d['2018']), d => d.COUNTRY);
-            const chartData = Array.from(rollup, ([country, avg]) => ({ country, avg }))
-                                   .sort((a, b) => b.avg - a.avg);
+      // 1. Bar Chart: Avg CO2 by Country (2018)
+      function drawBarChart(data) {
+        const margin = { top: 20, right: 20, bottom: 40, left: 60 };
+        const width = 500 - margin.left - margin.right;
+        const height = 300 - margin.top - margin.bottom;
 
-            const svg = d3.select("#chart-bar").append("svg")
-                .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
-                .append("g")
-                .attr("transform", `translate(${margin.left},${margin.top})`);
+        const rollup = d3.rollup(
+          data,
+          (v) => d3.mean(v, (d) => d["2018"]),
+          (d) => d.COUNTRY,
+        );
+        const chartData = Array.from(rollup, ([country, avg]) => ({
+          country,
+          avg,
+        })).sort((a, b) => b.avg - a.avg);
 
-            const x = d3.scaleBand().domain(chartData.map(d => d.country)).range([0, width]).padding(0.3);
-            const y = d3.scaleLinear().domain([0, d3.max(chartData, d => d.avg) * 1.1]).range([height, 0]);
+        const svg = d3
+          .select("#chart-bar")
+          .append("svg")
+          .attr(
+            "viewBox",
+            `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`,
+          )
+          .append("g")
+          .attr("transform", `translate(${margin.left},${margin.top})`);
 
-            // Grid
-            svg.append("g").attr("class", "grid-line").call(d3.axisLeft(y).tickSize(-width).tickFormat("").ticks(5));
+        const x = d3
+          .scaleBand()
+          .domain(chartData.map((d) => d.country))
+          .range([0, width])
+          .padding(0.3);
+        const y = d3
+          .scaleLinear()
+          .domain([0, d3.max(chartData, (d) => d.avg) * 1.1])
+          .range([height, 0]);
 
-            svg.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(x));
-            svg.append("g").call(d3.axisLeft(y));
+        // Grid
+        svg
+          .append("g")
+          .attr("class", "grid-line")
+          .call(d3.axisLeft(y).tickSize(-width).tickFormat("").ticks(5));
 
-            svg.selectAll(".bar")
-                .data(chartData)
-                .enter().append("rect")
-                .attr("class", "bar")
-                .attr("x", d => x(d.country))
-                .attr("y", d => y(d.avg))
-                .attr("width", x.bandwidth())
-                .attr("height", d => height - y(d.avg))
-                .attr("fill", "#6366f1")
-                .attr("rx", 3)
-                .on("mouseover", (event, d) => {
-                    d3.select(event.currentTarget).attr("fill", "#4f46e5");
-                    showTooltip(event, `<strong>${d.country}</strong><br/>Avg 2018: ${d.avg.toFixed(2)}`);
-                })
-                .on("mouseout", (event, d) => {
-                    d3.select(event.currentTarget).attr("fill", "#6366f1");
-                    hideTooltip();
-                });
-        }
+        svg
+          .append("g")
+          .attr("transform", `translate(0,${height})`)
+          .call(d3.axisBottom(x));
+        svg.append("g").call(d3.axisLeft(y));
 
-        // 2. Line Chart: Overall Emissions Trend (1995-2018)
-        function drawLineChart(data) {
-            const margin = {top: 20, right: 30, bottom: 30, left: 60};
-            const width = 500 - margin.left - margin.right;
-            const height = 300 - margin.top - margin.bottom;
+        svg
+          .selectAll(".bar")
+          .data(chartData)
+          .enter()
+          .append("rect")
+          .attr("class", "bar")
+          .attr("x", (d) => x(d.country))
+          .attr("y", (d) => y(d.avg))
+          .attr("width", x.bandwidth())
+          .attr("height", (d) => height - y(d.avg))
+          .attr("fill", "#6366f1")
+          .attr("rx", 3)
+          .on("mouseover", (event, d) => {
+            d3.select(event.currentTarget).attr("fill", "#4f46e5");
+            showTooltip(
+              event,
+              `<strong>${d.country}</strong><br/>Avg 2018: ${d.avg.toFixed(2)}`,
+            );
+          })
+          .on("mouseout", (event, d) => {
+            d3.select(event.currentTarget).attr("fill", "#6366f1");
+            hideTooltip();
+          });
+      }
 
-            const trendData = yearsList.map(year => {
-                return { year: +year, total: d3.sum(data, d => d[year]) };
-            });
+      // 2. Line Chart: Overall Emissions Trend (1995-2018)
+      function drawLineChart(data) {
+        const margin = { top: 20, right: 30, bottom: 30, left: 60 };
+        const width = 500 - margin.left - margin.right;
+        const height = 300 - margin.top - margin.bottom;
 
-            const svg = d3.select("#chart-line").append("svg")
-                .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
-                .append("g")
-                .attr("transform", `translate(${margin.left},${margin.top})`);
+        const trendData = yearsList.map((year) => {
+          return { year: +year, total: d3.sum(data, (d) => d[year]) };
+        });
 
-            const x = d3.scaleLinear().domain(d3.extent(trendData, d => d.year)).range([0, width]);
-            const y = d3.scaleLinear().domain([0, d3.max(trendData, d => d.total) * 1.1]).range([height, 0]);
+        const svg = d3
+          .select("#chart-line")
+          .append("svg")
+          .attr(
+            "viewBox",
+            `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`,
+          )
+          .append("g")
+          .attr("transform", `translate(${margin.left},${margin.top})`);
 
-            // Grid
-            svg.append("g").attr("class", "grid-line").call(d3.axisLeft(y).tickSize(-width).tickFormat("").ticks(5));
+        const x = d3
+          .scaleLinear()
+          .domain(d3.extent(trendData, (d) => d.year))
+          .range([0, width]);
+        const y = d3
+          .scaleLinear()
+          .domain([0, d3.max(trendData, (d) => d.total) * 1.1])
+          .range([height, 0]);
 
-            svg.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(x).tickFormat(d3.format("d")).ticks(8));
-            svg.append("g").call(d3.axisLeft(y).ticks(6));
+        // Grid
+        svg
+          .append("g")
+          .attr("class", "grid-line")
+          .call(d3.axisLeft(y).tickSize(-width).tickFormat("").ticks(5));
 
-            const line = d3.line()
-                .x(d => x(d.year))
-                .y(d => y(d.total))
-                .curve(d3.curveMonotoneX);
+        svg
+          .append("g")
+          .attr("transform", `translate(0,${height})`)
+          .call(d3.axisBottom(x).tickFormat(d3.format("d")).ticks(8));
+        svg.append("g").call(d3.axisLeft(y).ticks(6));
 
-            svg.append("path")
-                .datum(trendData)
-                .attr("fill", "none")
-                .attr("stroke", "#ec4899")
-                .attr("stroke-width", 3)
-                .attr("d", line);
+        const line = d3
+          .line()
+          .x((d) => x(d.year))
+          .y((d) => y(d.total))
+          .curve(d3.curveMonotoneX);
 
-            svg.selectAll("circle")
-                .data(trendData)
-                .enter().append("circle")
-                .attr("cx", d => x(d.year))
-                .attr("cy", d => y(d.total))
-                .attr("r", 4)
-                .attr("fill", "#fff")
-                .attr("stroke", "#ec4899")
-                .attr("stroke-width", 2)
-                .on("mouseover", (event, d) => showTooltip(event, `<strong>Year: ${d.year}</strong><br/>Total: ${d.total.toFixed(0)}`))
-                .on("mouseout", hideTooltip);
-        }
+        svg
+          .append("path")
+          .datum(trendData)
+          .attr("fill", "none")
+          .attr("stroke", "#ec4899")
+          .attr("stroke-width", 3)
+          .attr("d", line);
 
-        // 3. Top 10 industries by CO2 emissions, with a year slider
-        function drawIndustryChart() {
-            const W = 740, H = 380, left = 290, mt = 40;
-            const x = d3.scaleLinear([0, 14000], [left, W - 20]);   // fixed axis so years stay comparable
-            const y = d3.scaleBand().range([mt, H]).padding(0.4);
-            const svg = d3.select("#chart-industry").append("svg").attr("viewBox", `0 0 ${W} ${H}`);
+        svg
+          .selectAll("circle")
+          .data(trendData)
+          .enter()
+          .append("circle")
+          .attr("cx", (d) => x(d.year))
+          .attr("cy", (d) => y(d.total))
+          .attr("r", 4)
+          .attr("fill", "#fff")
+          .attr("stroke", "#ec4899")
+          .attr("stroke-width", 2)
+          .on("mouseover", (event, d) =>
+            showTooltip(
+              event,
+              `<strong>Year: ${d.year}</strong><br/>Total: ${d.total.toFixed(0)}`,
+            ),
+          )
+          .on("mouseout", hideTooltip);
+      }
 
-            svg.append("g").attr("transform", `translate(0,${mt})`)
-                .call(d3.axisTop(x).ticks(7, ",.0f").tickSize(-(H - mt)));
-            svg.append("text").attr("class", "axis-label").attr("x", (left + W - 20) / 2).attr("y", 14)
-                .attr("text-anchor", "middle").text("CO2 emissions");
-            svg.append("text").attr("class", "axis-label").attr("x", left - 6).attr("y", mt - 8)
-                .attr("text-anchor", "end").attr("font-weight", "bold").text("Industries");
+      // 3. Top 10 industries by CO2 emissions, with a year slider
+      function drawIndustryChart() {
+        const W = 740,
+          H = 380,
+          left = 290,
+          mt = 40;
+        const x = d3.scaleLinear([0, 14000], [left, W - 20]); // fixed axis so years stay comparable
+        const y = d3.scaleBand().range([mt, H]).padding(0.4);
+        const svg = d3
+          .select("#chart-industry")
+          .append("svg")
+          .attr("viewBox", `0 0 ${W} ${H}`);
 
-            // keep only the "CO2 emissions" rows (skip multipliers/intensities) while parsing
-            d3.csv("c02_emissions_dataset.csv", d => d.INDICATOR.startsWith("CO2 emissions, Metric") ? d : null).then(rows => {
-                function update(year) {
-                    const top10 = [...d3.rollup(rows, v => d3.sum(v, d => +d[year]), d => d.INDUSTRY)]
-                        .sort((a, b) => b[1] - a[1]).slice(0, 10);
-                    y.domain(top10.map(d => d[0]));
+        svg
+          .append("g")
+          .attr("transform", `translate(0,${mt})`)
+          .call(
+            d3
+              .axisTop(x)
+              .ticks(7, ",.0f")
+              .tickSize(-(H - mt)),
+          );
+        svg
+          .append("text")
+          .attr("class", "axis-label")
+          .attr("x", (left + W - 20) / 2)
+          .attr("y", 14)
+          .attr("text-anchor", "middle")
+          .text("CO2 emissions");
+        svg
+          .append("text")
+          .attr("class", "axis-label")
+          .attr("x", left - 6)
+          .attr("y", mt - 8)
+          .attr("text-anchor", "end")
+          .attr("font-weight", "bold")
+          .text("Industries");
 
-                    const g = svg.selectAll("g.bar").data(top10, d => d[0]).join(enter => {
-                        const g = enter.append("g").attr("class", "bar").attr("transform", d => `translate(0,${y(d[0])})`);
-                        g.append("rect").attr("x", x(0)).attr("fill", "#156082");
-                        g.append("text").attr("x", left - 6).attr("text-anchor", "end").attr("font-size", 11).attr("fill", "#334155").text(d => d[0]);
-                        return g;
-                    });
-                    g.transition().duration(500).attr("transform", d => `translate(0,${y(d[0])})`);
-                    g.select("rect").transition().duration(500).attr("height", y.bandwidth()).attr("width", d => x(d[1]) - x(0));
-                    g.select("text").attr("y", y.bandwidth() / 2 + 4);
-                    d3.select("#industry-year-label").text(year);
-                }
-                d3.select("#industry-year").on("input", e => update(+e.target.value));
-                update(2018);
-            });
-        }
+        // keep only the "CO2 emissions" rows (skip multipliers/intensities) while parsing
+        d3.csv("c02_emissions_dataset.csv", (d) =>
+          d.INDICATOR.startsWith("CO2 emissions, Metric") ? d : null,
+        ).then((rows) => {
+          function update(year) {
+            const top10 = [
+              ...d3.rollup(
+                rows,
+                (v) => d3.sum(v, (d) => +d[year]),
+                (d) => d.INDUSTRY,
+              ),
+            ]
+              .sort((a, b) => b[1] - a[1])
+              .slice(0, 10);
+            y.domain(top10.map((d) => d[0]));
 
-        // 4. Area Chart: Interactive Total Area
-        
+            const g = svg
+              .selectAll("g.bar")
+              .data(top10, (d) => d[0])
+              .join((enter) => {
+                const g = enter
+                  .append("g")
+                  .attr("class", "bar")
+                  .attr("transform", (d) => `translate(0,${y(d[0])})`);
+                g.append("rect").attr("x", x(0)).attr("fill", "#156082");
+                g.append("text")
+                  .attr("x", left - 6)
+                  .attr("text-anchor", "end")
+                  .attr("font-size", 11)
+                  .attr("fill", "#334155")
+                  .text((d) => d[0]);
+                return g;
+              });
+            g.transition()
+              .duration(500)
+              .attr("transform", (d) => `translate(0,${y(d[0])})`);
+            g.select("rect")
+              .transition()
+              .duration(500)
+              .attr("height", y.bandwidth())
+              .attr("width", (d) => x(d[1]) - x(0));
+            g.select("text").attr("y", y.bandwidth() / 2 + 4);
+            d3.select("#industry-year-label").text(year);
+          }
+          d3.select("#industry-year").on("input", (e) =>
+            update(+e.target.value),
+          );
+          update(2018);
+        });
+      }
+
+      // 4. Area Chart: Interactive Total Area
     </script>
-</body>
+  </body>
 </html>

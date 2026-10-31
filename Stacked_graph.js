@@ -96,6 +96,23 @@ svg
   .call(d3.axisBottom(x).tickFormat(d3.format("d")).ticks(12));
 svg.append("g").call(d3.axisLeft(y));
 
+svg
+  .append("text")
+  .attr("x", width / 2)
+  .attr("y", height + 40)
+  .attr("text-anchor", "middle")
+  .attr("fill", "#94a3b8")
+  .text("Year");
+
+svg
+  .append("text")
+  .attr("transform", "rotate(-90)")
+  .attr("x", -height / 2)
+  .attr("y", -margin.left + 15)
+  .attr("text-anchor", "middle")
+  .attr("fill", "#94a3b8")
+  .text("CO₂ emissions (metric tons)");
+
 const area = d3
   .area()
   .x((d) => x(d.year))
@@ -126,10 +143,35 @@ graph_area.insertAdjacentHTML(
 	</label>`,
 );
 let select = document.querySelector("#countries");
+let wasAll = true;
+
 select.addEventListener("change", (e) => {
   const selected = Array.from(e.target.selectedOptions).map((o) => o.value);
-  if (selected === "") filtered_countries = countries;
-  else filtered_countries = selected;
+  const allOption = select.querySelector('option[value=""]');
+  const specific = selected.filter((v) => v !== "");
+  const hasAll = selected.includes("");
+
+  if (hasAll && specific.length > 0) {
+    if (wasAll) {
+      allOption.selected = false;
+      filtered_countries = specific;
+      wasAll = false;
+    } else {
+      Array.from(select.options).forEach((o) => {
+        o.selected = o.value === "";
+      });
+      filtered_countries = countries;
+      wasAll = true;
+    }
+  } else if (specific.length === 0) {
+    allOption.selected = true;
+    filtered_countries = countries;
+    wasAll = true;
+  } else {
+    filtered_countries = specific;
+    wasAll = false;
+  }
+
   draw_graph();
 });
 
