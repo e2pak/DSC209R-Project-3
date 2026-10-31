@@ -1,4 +1,4 @@
-const file = await fetch("/CO2_emissions.csv");
+const file = await fetch("./CO2_emissions.csv");
 const content = await file.text();
 
 const [headers, ...lines] = content.trim().split(/\r?\n/);
