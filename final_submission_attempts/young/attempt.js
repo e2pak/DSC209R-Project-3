@@ -91,12 +91,16 @@ const avgFormat = d3.format(",.2f");
 const mapNode = document.getElementById("map");
 const statusNode = document.getElementById("status");
 const legendNode = document.getElementById("legend");
+const legendTitle = document.getElementById("legend-title");
+const mapBlurb = document.getElementById("map-blurb");
+const industrySelect = document.getElementById("industry");
 const slider = document.getElementById("year");
 const yearLabel = document.getElementById("year-label");
 const playButton = document.getElementById("play");
 const card = document.getElementById("hover-card");
 
 let places = [];
+let industryNames = [];
 let maxTotal = 1;
 let width = 0;
 let height = 0;
@@ -109,11 +113,41 @@ let labelSel = null;
 let hovered = null;
 let playTimer = null;
 let currentYear = 2018;
+let currentIndustry = "ALL";
 const countryFill = d3.interpolateRgbBasis(["#b7e4a8", "#3fa34d", "#f0b429", "#e23b3b"]);
 
 function colorOf(value) {
   const t = Math.sqrt(Math.max(0, value) / maxTotal);
   return countryFill(Math.max(0, Math.min(1, t)));
+}
+
+function placeValue(place, yearKey) {
+  const stats = place.byYear[yearKey];
+  if (currentIndustry === "ALL") return stats.total;
+  return stats.byIndustry[currentIndustry] || 0;
+}
+
+function fillIndustryOptions(names) {
+  industrySelect
+    .querySelectorAll("option:not([value='ALL'])")
+    .forEach((option) => option.remove());
+  for (const name of names) {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    industrySelect.appendChild(option);
+  }
+}
+
+function updateChrome() {
+  if (currentIndustry === "ALL") {
+    mapBlurb.textContent =
+      "Country color shows each economy’s total CO₂ emissions in the selected year, summed across industries.";
+    legendTitle.textContent = "Total emissions";
+  } else {
+    mapBlurb.textContent = `Country color shows each economy’s CO₂ emissions from ${currentIndustry} in the selected year. Colors stay on the same scale as the all-industry total.`;
+    legendTitle.textContent = currentIndustry;
+  }
 }
 
 function shortIndustry(name) {
@@ -153,6 +187,9 @@ function preparePlaces(rows, world) {
   const emissions = rows.filter(
     (row) => row.INDICATOR && row.INDICATOR.startsWith(INDICATOR_PREFIX),
   );
+  industryNames = Array.from(
+    new Set(emissions.map((row) => row.INDUSTRY).filter(Boolean)),
+  ).sort((a, b) => a.localeCompare(b));
   const byCountry = d3.group(emissions, (row) => row.COUNTRY);
   const countries = topojson.feature(world, world.objects.countries);
   const index = featureIndex(countries);
@@ -175,9 +212,12 @@ function preparePlaces(rows, world) {
       const industries = countryRows
         .map((row) => ({ name: row.INDUSTRY, value: +row[year] || 0 }))
         .sort((a, b) => b.value - a.value);
+      const byIndustry = Object.fromEntries(
+        industries.map((item) => [item.name, item.value]),
+      );
       const total = d3.sum(industries, (d) => d.value);
       const avg = industries.length ? total / industries.length : 0;
-      byYear[year] = { total, avg, top: industries.slice(0, 6) };
+      byYear[year] = { total, avg, top: industries.slice(0, 6), byIndustry };
     }
     located.push({ ...meta, lon: lonLat[0], lat: lonLat[1], byYear });
   }
@@ -275,12 +315,31 @@ function moveCard(event) {
   card.style.top = `${Math.max(8, y)}px`;
 }
 
+function fillCard(place, year) {
+  const key = String(year);
+  const stats = place.byYear[key];
+  const nameNode = document.getElementById("card-name");
+  const totalNode = document.getElementById("card-total");
+  if (currentIndustry === "ALL") {
+    card.classList.remove("industry-only");
+    nameNode.textContent = `${place.label} · ${year}`;
+    totalNode.textContent = `Total ${totalFormat(stats.total)}`;
+    document.getElementById("card-avg").textContent = avgFormat(stats.avg);
+    drawIndustryChart(stats.top);
+  } else {
+    card.classList.add("industry-only");
+    const value = stats.byIndustry[currentIndustry] || 0;
+    nameNode.textContent = `${place.label} · ${year}`;
+    totalNode.textContent = totalFormat(value);
+    nameNode.insertAdjacentHTML(
+      "beforeend",
+      `<span class="card-industry">${currentIndustry}</span>`,
+    );
+  }
+}
+
 function showCard(event, place) {
-  const stats = place.byYear[String(currentYear)];
-  document.getElementById("card-name").textContent = `${place.label} · ${currentYear}`;
-  document.getElementById("card-total").textContent = `Total ${totalFormat(stats.total)}`;
-  document.getElementById("card-avg").textContent = avgFormat(stats.avg);
-  drawIndustryChart(stats.top);
+  fillCard(place, currentYear);
   card.classList.add("visible");
   card.setAttribute("aria-hidden", "false");
   moveCard(event);
@@ -294,10 +353,11 @@ function hideCard() {
 function refreshLabels() {
   const labeled = [];
   const nodes = labelSel.nodes();
+  const yearKey = String(currentYear);
   const ranked = nodes
     .map((node) => {
       const place = node.__data__;
-      const value = place.byYear[String(currentYear)].total;
+      const value = placeValue(place, yearKey);
       const [px, py] = projection([place.lon, place.lat]);
       return { node, place, value, px, py };
     })
@@ -351,23 +411,21 @@ function applyYear(year, animate) {
   slider.setAttribute("aria-valuenow", String(year));
   const key = String(year);
   const fillFor = (feature) =>
-    feature.place ? colorOf(feature.place.byYear[key].total) : "#f4f1ea";
+    feature.place ? colorOf(placeValue(feature.place, key)) : "#f4f1ea";
 
   countrySel.select("title").text((feature) => {
     if (!feature.place) return "";
-    return `${feature.place.label}, ${year}: ${totalFormat(feature.place.byYear[key].total)}`;
+    const value = placeValue(feature.place, key);
+    if (currentIndustry === "ALL") {
+      return `${feature.place.label}, ${year}: ${totalFormat(value)}`;
+    }
+    return `${feature.place.label}, ${year}, ${currentIndustry}: ${totalFormat(value)}`;
   });
 
   const shapes = animate ? countrySel.transition().duration(450) : countrySel.interrupt();
   shapes.attr("fill", fillFor);
   refreshLabels();
-  if (hovered) {
-    const stats = hovered.byYear[key];
-    document.getElementById("card-name").textContent = `${hovered.label} · ${year}`;
-    document.getElementById("card-total").textContent = `Total ${totalFormat(stats.total)}`;
-    document.getElementById("card-avg").textContent = avgFormat(stats.avg);
-    drawIndustryChart(stats.top);
-  }
+  if (hovered) fillCard(hovered, year);
 }
 
 function drawColorLegend() {
@@ -378,6 +436,7 @@ function drawColorLegend() {
     `linear-gradient(to right, ${stops.join(", ")})`;
   document.getElementById("ramp-low").textContent = "0";
   document.getElementById("ramp-high").textContent = d3.format(",.0f")(maxTotal);
+  updateChrome();
 }
 
 function layout(animate) {
@@ -494,12 +553,18 @@ slider.addEventListener("input", () => {
   stopPlay();
   applyYear(+slider.value, true);
 });
+industrySelect.addEventListener("change", () => {
+  currentIndustry = industrySelect.value;
+  updateChrome();
+  if (!svg) return;
+  applyYear(currentYear, true);
+});
 playButton.addEventListener("click", startPlay);
 document.addEventListener("keydown", (event) => {
   if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
-  if (event.target && event.target.tagName === "INPUT" && event.target.type !== "range") {
-    return;
-  }
+  const target = event.target;
+  if (target && target.tagName === "SELECT") return;
+  if (target && target.tagName === "INPUT" && target.type !== "range") return;
   event.preventDefault();
   stopPlay();
   const step = event.key === "ArrowRight" ? 1 : -1;
@@ -517,6 +582,8 @@ Promise.all([
 ])
   .then(([rows, world]) => {
     places = preparePlaces(rows, world);
+    fillIndustryOptions(industryNames);
+    // Fixed ceiling: max country-year total across all industries.
     maxTotal = d3.max(places, (place) =>
       d3.max(YEARS, (year) => place.byYear[year].total),
     );

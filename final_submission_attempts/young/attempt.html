@@ -11,7 +11,7 @@
   <body>
     <header>
       <h1>CO2 emissions by country through the years</h1>
-      <p>
+      <p id="map-blurb">
         Country color shows each economy’s total CO₂ emissions in the selected
         year, summed across industries.
       </p>
@@ -20,7 +20,7 @@
     <div id="map">
       <p id="status">Loading map…</p>
       <aside id="legend" hidden>
-        <p>Total emissions</p>
+        <p id="legend-title">Total emissions</p>
         <div id="ramp"></div>
         <div class="ramp-labels">
           <span id="ramp-low">Lower</span>
@@ -30,6 +30,12 @@
     </div>
 
     <footer>
+      <label class="industry-field" for="industry">
+        Industry
+        <select id="industry" aria-label="Industry">
+          <option value="ALL" selected>ALL</option>
+        </select>
+      </label>
       <label class="year-field" for="year">
         Year
         <span class="year-row">

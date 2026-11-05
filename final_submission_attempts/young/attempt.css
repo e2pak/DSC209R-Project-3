@@ -129,11 +129,37 @@ footer {
   border-top: 1px solid #e5e7eb;
 }
 
+.industry-field {
+  display: flex;
+  flex: 0 1 280px;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 140px;
+  max-width: 320px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+#industry {
+  width: 100%;
+  max-width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 .year-field {
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
   max-width: 640px;
   font-size: 13px;
   font-weight: 700;
@@ -211,6 +237,20 @@ footer {
   display: block;
 }
 
+#hover-card.industry-only {
+  width: min(320px, calc(100vw - 24px));
+}
+
+#hover-card.industry-only .card-body {
+  display: none;
+}
+
+#hover-card.industry-only .card-head {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
 .card-head {
   display: flex;
   justify-content: space-between;
@@ -222,7 +262,18 @@ footer {
 }
 
 .card-head strong {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   font-size: 15px;
+}
+
+.card-head .card-industry {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-wrap: pretty;
 }
 
 .card-head span {
@@ -273,6 +324,15 @@ footer {
 }
 
 @media (max-width: 720px) {
+  footer {
+    flex-wrap: wrap;
+  }
+
+  .industry-field {
+    flex: 1 1 100%;
+    max-width: none;
+  }
+
   .card-body {
     grid-template-columns: 1fr;
   }
