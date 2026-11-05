@@ -21,6 +21,7 @@
       <p id="status">Loading map…</p>
       <aside id="legend" hidden>
         <p id="legend-title">Total emissions</p>
+        <p id="legend-mode" class="hint">Absolute</p>
         <div id="ramp"></div>
         <div class="ramp-labels">
           <span id="ramp-low">Lower</span>
@@ -30,13 +31,34 @@
     </div>
 
     <footer>
-      <label class="industry-field" for="industry">
+      <label class="control-field industry-field" for="industry">
         Industry
         <select id="industry" aria-label="Industry">
           <option value="ALL" selected>ALL</option>
         </select>
       </label>
-      <label class="year-field" for="year">
+
+      <fieldset class="control-field scale-field">
+        <legend>Scale</legend>
+        <div class="scale-controls">
+          <div class="scale-row" role="radiogroup" aria-label="Color scale mode">
+            <label class="scale-option">
+              <input type="radio" name="scale-mode" value="absolute" checked />
+              Absolute
+            </label>
+            <label class="scale-option">
+              <input type="radio" name="scale-mode" value="relative" />
+              Relative
+            </label>
+          </div>
+          <label class="log-option" for="log-scale">
+            <input id="log-scale" type="checkbox" />
+            Log
+          </label>
+        </div>
+      </fieldset>
+
+      <label class="control-field year-field" for="year">
         Year
         <span class="year-row">
           <span class="endpoint">1995</span>
@@ -55,7 +77,10 @@
           <strong id="year-label">2018</strong>
         </span>
       </label>
-      <button id="play" type="button">Play</button>
+
+      <div class="play-wrap">
+        <button id="play" type="button">Play</button>
+      </div>
     </footer>
 
     <div id="hover-card" role="tooltip" aria-hidden="true">

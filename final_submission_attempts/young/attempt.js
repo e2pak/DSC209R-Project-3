@@ -92,8 +92,11 @@ const mapNode = document.getElementById("map");
 const statusNode = document.getElementById("status");
 const legendNode = document.getElementById("legend");
 const legendTitle = document.getElementById("legend-title");
+const legendMode = document.getElementById("legend-mode");
 const mapBlurb = document.getElementById("map-blurb");
 const industrySelect = document.getElementById("industry");
+const scaleModeInputs = document.querySelectorAll('input[name="scale-mode"]');
+const logScaleInput = document.getElementById("log-scale");
 const slider = document.getElementById("year");
 const yearLabel = document.getElementById("year-label");
 const playButton = document.getElementById("play");
@@ -102,6 +105,7 @@ const card = document.getElementById("hover-card");
 let places = [];
 let industryNames = [];
 let maxTotal = 1;
+let relativeMax = 1;
 let width = 0;
 let height = 0;
 let projection = d3.geoMercator();
@@ -114,10 +118,21 @@ let hovered = null;
 let playTimer = null;
 let currentYear = 2018;
 let currentIndustry = "ALL";
+let scaleMode = "absolute";
+let useLog = false;
 const countryFill = d3.interpolateRgbBasis(["#b7e4a8", "#3fa34d", "#f0b429", "#e23b3b"]);
 
+function activeCeiling() {
+  return scaleMode === "relative" ? relativeMax : maxTotal;
+}
+
 function colorOf(value) {
-  const t = Math.sqrt(Math.max(0, value) / maxTotal);
+  const ceiling = Math.max(activeCeiling(), 1e-9);
+  const v = Math.max(0, value);
+  const t =
+    scaleMode === "absolute" && useLog
+      ? Math.log1p(v) / Math.log1p(ceiling)
+      : Math.sqrt(v / ceiling);
   return countryFill(Math.max(0, Math.min(1, t)));
 }
 
@@ -125,6 +140,20 @@ function placeValue(place, yearKey) {
   const stats = place.byYear[yearKey];
   if (currentIndustry === "ALL") return stats.total;
   return stats.byIndustry[currentIndustry] || 0;
+}
+
+function recomputeRelativeMax() {
+  relativeMax =
+    d3.max(places, (place) => d3.max(YEARS, (year) => placeValue(place, year))) || 1;
+}
+
+function syncLogAvailability() {
+  const absolute = scaleMode === "absolute";
+  logScaleInput.disabled = !absolute;
+  if (!absolute) {
+    useLog = false;
+    logScaleInput.checked = false;
+  }
 }
 
 function fillIndustryOptions(names) {
@@ -141,12 +170,20 @@ function fillIndustryOptions(names) {
 
 function updateChrome() {
   if (currentIndustry === "ALL") {
+    legendTitle.textContent = "Total emissions";
     mapBlurb.textContent =
       "Country color shows each economy’s total CO₂ emissions in the selected year, summed across industries.";
-    legendTitle.textContent = "Total emissions";
   } else {
-    mapBlurb.textContent = `Country color shows each economy’s CO₂ emissions from ${currentIndustry} in the selected year. Colors stay on the same scale as the all-industry total.`;
     legendTitle.textContent = currentIndustry;
+    mapBlurb.textContent = `Country color shows CO₂ emissions from ${currentIndustry} in the selected year.`;
+  }
+
+  if (scaleMode === "relative") {
+    legendMode.textContent = "Relative to this industry’s max";
+  } else if (useLog) {
+    legendMode.textContent = "Absolute · log";
+  } else {
+    legendMode.textContent = "Absolute · shared max";
   }
 }
 
@@ -429,14 +466,24 @@ function applyYear(year, animate) {
 }
 
 function drawColorLegend() {
+  const ceiling = activeCeiling();
   const stops = d3.range(0, 1.001, 0.08).map((t) => {
-    return `${colorOf(t * maxTotal)} ${(t * 100).toFixed(0)}%`;
+    return `${colorOf(t * ceiling)} ${(t * 100).toFixed(0)}%`;
   });
   document.getElementById("ramp").style.background =
     `linear-gradient(to right, ${stops.join(", ")})`;
   document.getElementById("ramp-low").textContent = "0";
-  document.getElementById("ramp-high").textContent = d3.format(",.0f")(maxTotal);
+  document.getElementById("ramp-high").textContent = d3.format(",.0f")(ceiling);
   updateChrome();
+}
+
+function refreshScale() {
+  recomputeRelativeMax();
+  syncLogAvailability();
+  updateChrome();
+  if (!svg) return;
+  applyYear(currentYear, true);
+  drawColorLegend();
 }
 
 function layout(animate) {
@@ -555,9 +602,18 @@ slider.addEventListener("input", () => {
 });
 industrySelect.addEventListener("change", () => {
   currentIndustry = industrySelect.value;
-  updateChrome();
-  if (!svg) return;
-  applyYear(currentYear, true);
+  refreshScale();
+});
+for (const input of scaleModeInputs) {
+  input.addEventListener("change", () => {
+    if (!input.checked) return;
+    scaleMode = input.value;
+    refreshScale();
+  });
+}
+logScaleInput.addEventListener("change", () => {
+  useLog = Boolean(logScaleInput.checked) && scaleMode === "absolute";
+  refreshScale();
 });
 playButton.addEventListener("click", startPlay);
 document.addEventListener("keydown", (event) => {
@@ -583,10 +639,12 @@ Promise.all([
   .then(([rows, world]) => {
     places = preparePlaces(rows, world);
     fillIndustryOptions(industryNames);
-    // Fixed ceiling: max country-year total across all industries.
+    // Fixed Absolute ceiling: max country-year total across all industries.
     maxTotal = d3.max(places, (place) =>
       d3.max(YEARS, (year) => place.byYear[year].total),
     );
+    recomputeRelativeMax();
+    syncLogAvailability();
     draw();
   })
   .catch((error) => {

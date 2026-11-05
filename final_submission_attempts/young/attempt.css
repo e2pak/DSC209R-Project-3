@@ -4,7 +4,9 @@
   --border: #d3cdc3;
   --ink: #1f2937;
   --muted: #64748b;
+  --line: #e5e7eb;
   --card: #ffffff;
+  --control-h: 34px;
 }
 
 * {
@@ -27,21 +29,24 @@ body {
 
 header {
   flex: 0 0 auto;
-  padding: 16px 22px 8px;
+  padding: 14px 22px 10px;
   background: #fff;
+  border-bottom: 1px solid var(--line);
 }
 
 h1 {
   margin: 0;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 650;
   letter-spacing: -0.02em;
 }
 
 header p {
   margin: 4px 0 0;
+  max-width: 72ch;
   color: var(--muted);
   font-size: 13px;
+  line-height: 1.4;
 }
 
 #map {
@@ -83,22 +88,24 @@ header p {
   position: absolute;
   top: 14px;
   right: 14px;
-  width: 168px;
+  width: min(220px, calc(100% - 28px));
   padding: 10px 12px 12px;
   background: rgba(255, 255, 255, 0.94);
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--line);
   border-radius: 8px;
   box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
 }
 
-#legend p {
-  margin: 0 0 6px;
+#legend-title {
+  margin: 0;
   font-size: 12px;
   font-weight: 700;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
 }
 
 #legend .hint {
-  margin: 8px 0 4px;
+  margin: 2px 0 8px;
   color: var(--muted);
   font-size: 11px;
   font-weight: 600;
@@ -116,59 +123,155 @@ header p {
   margin-top: 3px;
   color: var(--muted);
   font-size: 10px;
+  font-variant-numeric: tabular-nums;
 }
 
 footer {
   flex: 0 0 auto;
   display: flex;
-  align-items: center;
-  gap: 14px;
-  min-height: 68px;
-  padding: 10px 22px;
+  align-items: flex-end;
+  gap: 16px;
+  padding: 12px 22px;
   background: #fff;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--line);
+}
+
+.control-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.control-field legend {
+  padding: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
 .industry-field {
-  display: flex;
-  flex: 0 1 280px;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 140px;
-  max-width: 320px;
-  font-size: 13px;
-  font-weight: 700;
+  flex: 0 1 260px;
+  max-width: 300px;
 }
 
 #industry {
   width: 100%;
-  max-width: 100%;
-  padding: 6px 8px;
+  height: var(--control-h);
+  padding: 0 10px;
   border: 1px solid #d1d5db;
-  border-radius: 4px;
+  border-radius: 6px;
   background: #fff;
   color: var(--ink);
   font: inherit;
   font-size: 13px;
   font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
   cursor: pointer;
 }
 
-.year-field {
+.scale-field {
+  flex: 0 0 auto;
+}
+
+.scale-controls {
   display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-  max-width: 640px;
+  align-items: center;
+  gap: 8px;
+  height: var(--control-h);
+}
+
+.scale-row {
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+  padding: 2px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #f1f5f9;
+}
+
+.scale-option {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0 12px;
+  border-radius: 4px;
+  color: var(--muted);
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 650;
+  letter-spacing: 0;
+  text-transform: none;
+  cursor: pointer;
+  user-select: none;
+}
+
+.scale-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.scale-option:has(input:checked) {
+  background: #fff;
+  color: var(--ink);
+  box-shadow:
+    0 0 0 1px #cbd5e1,
+    0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.log-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  margin: 0;
+  padding: 0 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0;
+  text-transform: none;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.log-option input {
+  margin: 0;
+  accent-color: #3b82f6;
+}
+
+.log-option:has(input:disabled) {
+  color: #94a3b8;
+  background: #f8fafc;
+  cursor: not-allowed;
+}
+
+.year-field {
+  flex: 1 1 280px;
+  max-width: none;
 }
 
 .year-row {
   display: flex;
   align-items: center;
   gap: 10px;
+  height: var(--control-h);
 }
 
 .endpoint {
@@ -176,32 +279,49 @@ footer {
   font-size: 12px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 #year {
   flex: 1 1 auto;
   width: 100%;
+  margin: 0;
   accent-color: #3b82f6;
 }
 
 #year-label {
-  min-width: 3.4em;
-  padding: 4px 8px;
+  min-width: 3.5em;
+  height: var(--control-h);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
   border: 1px solid #d1d5db;
-  border-radius: 4px;
+  border-radius: 6px;
+  color: var(--ink);
   font-size: 14px;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
-  text-align: center;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.play-wrap {
+  display: flex;
+  align-items: flex-end;
+  height: calc(11px + 5px + var(--control-h));
 }
 
 #play {
-  padding: 7px 16px;
+  height: var(--control-h);
+  padding: 0 16px;
   border: 1px solid #cbd5e1;
   border-radius: 6px;
   background: #fff;
   color: var(--ink);
   font: inherit;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 650;
   cursor: pointer;
 }
@@ -300,7 +420,7 @@ footer {
   flex-direction: column;
   justify-content: center;
   padding-left: 12px;
-  border-left: 1px solid #e5e7eb;
+  border-left: 1px solid var(--line);
 }
 
 .avg-panel .unit {
@@ -323,16 +443,33 @@ footer {
   font-size: 10px;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 900px) {
   footer {
     flex-wrap: wrap;
+    align-items: stretch;
+    gap: 12px;
   }
 
   .industry-field {
-    flex: 1 1 100%;
+    flex: 1 1 220px;
     max-width: none;
   }
 
+  .scale-field {
+    flex: 0 0 auto;
+  }
+
+  .year-field {
+    flex: 1 1 100%;
+  }
+
+  .play-wrap {
+    height: auto;
+    align-items: center;
+  }
+}
+
+@media (max-width: 720px) {
   .card-body {
     grid-template-columns: 1fr;
   }
@@ -340,7 +477,7 @@ footer {
   .avg-panel {
     padding: 8px 0 0;
     border-left: 0;
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid var(--line);
   }
 
   #legend {
