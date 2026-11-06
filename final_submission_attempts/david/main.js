@@ -85,8 +85,8 @@ const PLACES = [
   { csv: "Vietnam", iso: "704", label: "Vietnam" },
 ];
 
-const totalFormat = d3.format(",.1f");
-const avgFormat = d3.format(",.2f");
+const totalFormat = d3.format(",.3f");
+const avgFormat = d3.format(",.3f");
 
 const mapNode = document.getElementById("map");
 const statusNode = document.getElementById("status");
@@ -125,7 +125,6 @@ const countryFill = d3.interpolateRgbBasis([
 
 const COLORS = ["#3fa34d", "#f0b429", "#e23b3b"];
 const quantize = d3.scaleQuantize().range(COLORS);
-
 
 // function colorOf(value) {
 //   const t = Math.sqrt(Math.max(0, value) / maxTotal);
@@ -239,9 +238,9 @@ function drawIndustryChart(top) {
     .attr("viewBox", `0 0 ${svgWidth} ${svgHeight}`);
   chart.selectAll("*").remove();
   if (currentIndustry !== "") {
-    d3.select('#chartArea').style("display", "none");
+    d3.select("#chartArea").style("display", "none");
     return;
-  }else d3.select('#chartArea').style("display", null);
+  } else d3.select("#chartArea").style("display", null);
   const root = chart
     .append("g")
     .attr("transform", `translate(${margin.left},${margin.top})`);
@@ -310,13 +309,36 @@ function moveCard(event) {
   card.style.top = `${Math.max(8, y)}px`;
 }
 
+function getSelectedValue(place, yearKey) {
+  if (currentIndustry === "") return place.byYear[yearKey].total;
+  return place.byYear[yearKey].total || 0;
+}
+
 function showCard(event, place) {
   const stats = place.byYear[String(currentYear)];
+  const globalTotal = d3.sum(places, (p) => getSelectedValue(p, String(currentYear)));
+  const unit = document.querySelector(".avg-panel .unit");
+  const value = document.querySelector(".avg-panel .value");
+  const val = getSelectedValue(place, String(currentYear));
+  const percentShare = globalTotal > 0 ? (val / globalTotal) * 100 : 0;
+  const hide = currentIndustry !== "";
+
+  unit.style.display = hide ? "none" : "";
+  value.style.display = hide ? "none" : "";
+
+  document.getElementById("card-total").replaceChildren();
   document.getElementById("card-name").textContent =
     `${place.label} · ${currentYear}`;
-  document.getElementById("card-total").textContent =
-    `Total ${totalFormat(stats.total)}`;
+
+  document.getElementById("card-total").insertAdjacentHTML(
+    "afterbegin",
+    `
+  	<p class="unit">Total CO2 emissions, Metric ton of CO₂</p>
+	<p class="value">${totalFormat(stats.total)}</p>
+  	`,
+  );
   document.getElementById("card-avg").textContent = avgFormat(stats.avg);
+  document.getElementById("card-all-pct").textContent = `${percentShare.toFixed(2)}%`;
   drawIndustryChart(stats.top);
   card.classList.add("visible");
   card.setAttribute("aria-hidden", "false");
@@ -339,8 +361,7 @@ function refreshLabels() {
       return { node, place, value, px, py };
     })
     .sort((a, b) => b.value - a.value);
-  const named = new Set(ranked.slice(0, 12).map((item) => item.place));
-
+  const named = new Set(ranked.slice(0, 11).map((item) => item.place));
   for (const item of ranked) {
     const text = d3.select(item.node);
     const forced = hovered === item.place;
@@ -588,7 +609,10 @@ function main(file) {
     d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json"),
   ])
     .then(([rows, world]) => {
-      if (flag){drawIndustryFilter(rows); flag=false;}
+      if (flag) {
+        drawIndustryFilter(rows);
+        flag = false;
+      }
       if (currentIndustry !== "")
         rows = rows.filter((d) => d.INDUSTRY === currentIndustry);
       places = preparePlaces(rows, world);

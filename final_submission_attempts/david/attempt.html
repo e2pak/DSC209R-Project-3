@@ -24,7 +24,7 @@
     <div id="map">
       <p id="status">Loading map…</p>
       <aside id="legend" hidden>
-        <p>Total emissions</p>
+        <p>Total emissions (Metric ton)</p>
         <div id="ramp"></div>
         <div class="ramp-labels">
           <span id="ramp-low">Lower</span>
@@ -63,7 +63,7 @@
 	  <div id="data_type">
 		<label class="color-scheme">
           Data:
-          <input type="checkbox" role="switch" id="per-capita" >Per-capita
+          <input type="checkbox" role="switch" id="per-capita" >Normalized per-capita
         </label>
 	  </div>
     </footer>
@@ -71,7 +71,6 @@
     <div id="hover-card" role="tooltip" aria-hidden="true">
       <div class="card-head">
         <strong id="card-name"></strong>
-        <span id="card-total"></span>
       </div>
       <div class="card-body">
         <div id="chartArea">
@@ -81,7 +80,11 @@
         <div class="avg-panel">
           <p class="unit">Avg. CO2 emissions, Metric ton of CO₂</p>
           <p class="value" id="card-avg"></p>
+		  <span id="card-total"></span>
+		  <p class="unit share-label">Global share</p>
+          <p class="value" id="card-all-pct"></p>
         </div>
+	  </div>
       </div>
     </div>
   </body>

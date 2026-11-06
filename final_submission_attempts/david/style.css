@@ -251,6 +251,13 @@ footer {
   padding-left: 12px;
   border-left: 1px solid #e5e7eb;
 }
+.total-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-left: 12px;
+  border-left: 1px solid #e5e7eb;
+}
 
 .avg-panel .unit {
   margin: 0;
