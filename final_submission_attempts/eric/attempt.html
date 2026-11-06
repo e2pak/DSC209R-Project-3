@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CO2 emissions by country through the years</title>
+    <link rel="stylesheet" href="attempt.css" />
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+  </head>
+  <body>
+    <header>
+      <h1>CO2 emissions by country through the years</h1>
+      <p>
+        CO₂ emissions are in units of "metric tons of CO₂ emissions per $1 million USD of output".<br><br>
+        Countries not available in IMF dataset will be colored white.<br>
+        "Global share" in the hover tooltip is calculated as the percentage of a country's emissions relative to the total emissions of all countries for that year and industry.<br><br>
+        Use the dropdown below to filter each country's CO₂ emissions by industry.
+      </p>
+      
+      <!-- New Industry Dropdown -->
+      <div id="industry-filter">
+        <label for="industry-select">Industry:</label>
+        <select id="industry-select">
+          <option value="all">All Industries</option>
+        </select>
+      </div>
+    </header>
+
+    <div id="map">
+      <p id="status">Loading map…</p>
+      <aside id="legend" hidden>
+        <p>Total emissions</p>
+        <div id="ramp"></div>
+        <div class="ramp-labels">
+          <span id="ramp-low">Lower</span>
+          <span id="ramp-high">Higher</span>
+        </div>
+      </aside>
+    </div>
+    
+    <footer>
+      <label class="year-field" for="year">
+        Year
+        <span class="year-row">
+          <span class="endpoint">1995</span>
+          <input
+            id="year"
+            type="range"
+            min="1995"
+            max="2018"
+            value="2018"
+            step="1"
+            aria-valuemin="1995"
+            aria-valuemax="2018"
+            aria-valuenow="2018"
+          />
+          <span class="endpoint">2018</span>
+          <strong id="year-label">2018</strong>
+        </span>
+      </label>
+      <button id="play" type="button">Play</button>
+    </footer>
+
+<div id="hover-card" role="tooltip" aria-hidden="true">
+      <div class="card-head">
+        <strong id="card-name"></strong>
+      </div>
+      
+      <!-- Default view for All Industries -->
+      <div class="card-body" id="all-industries-body">
+        
+        <!-- Left column: Bar chart only -->
+        <div>
+          <p class="panel-title">Top industry</p>
+          <svg id="industry-chart"></svg>
+        </div>
+        
+        <!-- Right column: Total, Average, and Global share -->
+        <div class="avg-panel">
+          <p class="unit">Total CO₂ emissions (metric tons)</p>
+          <p class="value" id="card-all-total"></p>
+
+          <p class="unit share-label">Avg. CO₂ emissions (Metric tons)</p>
+          <p class="value" id="card-avg"></p>
+          
+          <p class="unit share-label">Global share</p>
+          <p class="value" id="card-all-pct"></p>
+        </div>
+        
+      </div>
+
+      <!-- New view for Single Industry selections -->
+      <div class="card-body-single hidden" id="single-industry-body">
+        <div class="stat-row">
+          <span class="unit">CO₂ emissions (metric tons):</span>
+          <strong class="value" id="card-single-val"></strong>
+        </div>
+        <div class="stat-row">
+          <span class="unit">Global industry share:</span>
+          <strong class="value" id="card-single-pct"></strong>
+        </div>
+      </div>
+    </div>
+
+    <script src="attempt.js"></script>
+  </body>
+</html>
