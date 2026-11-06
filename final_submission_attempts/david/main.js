@@ -123,7 +123,7 @@ const countryFill = d3.interpolateRgbBasis([
   "#e23b3b",
 ]);
 
-const COLORS = ["#b7e4a8", "#3fa34d", "#f0b429", "#e23b3b"];
+const COLORS = ["#3fa34d", "#f0b429", "#e23b3b"];
 const quantize = d3.scaleQuantize().range(COLORS);
 
 
