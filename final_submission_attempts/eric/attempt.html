@@ -4,33 +4,25 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CO2 emissions by country through the years</title>
-    <link rel="stylesheet" href="attempt.css" />
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+    <script src="./main.js" type="module"></script>
+    <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
+    <div class="app-container">
     <header>
-      <h1>CO2 emissions by country through the years</h1>
-      <p>
-        CO₂ emissions are in units of "metric tons of CO₂ emissions per $1 million USD of output".<br><br>
-        Countries not available in IMF dataset will be colored white.<br>
-        "Global share" in the hover tooltip is calculated as the percentage of a country's emissions relative to the total emissions of all countries for that year and industry.<br><br>
-        Use the dropdown below to filter each country's CO₂ emissions by industry.
-      </p>
-      
-      <!-- New Industry Dropdown -->
-      <div id="industry-filter">
-        <label for="industry-select">Industry:</label>
-        <select id="industry-select">
-          <option value="all">All Industries</option>
-        </select>
-      </div>
+      <h1>Which countries are the primary contributors to global CO₂ emissions, and is that trend consistent among all industries?</h1>
+      <p>CO₂ emissions are in units of "metric tons of CO₂ emissions per $1 million USD of output".</p>
+      <p>Countries not available in IMF dataset will be colored white.</p>
+      <p>"Global share" in the hover tooltip is calculated as the percentage of a country's emissions relative to the total emissions of all countries for that year and industry.</p>
+      <p>The names of the top 10 countries by CO₂ emissions are always displayed. (Adapts to industry toggle)</p>
     </header>
 
     <div id="map">
       <p id="status">Loading map…</p>
       <aside id="legend" hidden>
-        <p>Total emissions</p>
+        <p>Total emissions (Metric ton)</p>
         <div id="ramp"></div>
         <div class="ramp-labels">
           <span id="ramp-low">Lower</span>
@@ -38,7 +30,7 @@
         </div>
       </aside>
     </div>
-    
+
     <footer>
       <label class="year-field" for="year">
         Year
@@ -59,50 +51,57 @@
           <strong id="year-label">2018</strong>
         </span>
       </label>
-      <button id="play" type="button">Play</button>
-    </footer>
 
-<div id="hover-card" role="tooltip" aria-hidden="true">
+      <button id="play" type="button">Play</button>
+      <div id="Industries" class="tooltip-container">
+        <label class="color-scheme">
+          Industry:
+          <select id="industries"></select>
+        </label>
+        <span class="custom-tooltip">Use this industry dropdown to filter each country's CO₂ emissions by industry.</span>
+      </div>
+      
+      <div id="data_type" class="tooltip-container">
+        <label class="color-scheme">
+          Data:
+          <input type="checkbox" role="switch" id="per-capita" >Normalized per-capita
+        </label>
+        <span class="custom-tooltip">Select this box to see each country's carbon emission values after they have been divided by their respective country population. (Purpose: To compare emissions unbiased by population size.)</span>
+      </div>
+    </footer>
+  </div>
+
+  <section class="writeup-section">
+      <h2>Writeup</h2>
+      <h4>Design Rationale</h4>
+      <p>We chose a map of the world, with each country defined on the map being the primary marking visual encoding. We believed this would be effective at comparing countries directly, by geographic location.</p> 
+      <p>We chose to represent countries in colors from a red-yellow-green gradient, where red represents high emissions and green represents low emissions. We chose this color scheme because red generally signifies danger or high levels, while green represents safety or low levels. We considered using a color scale that had several bins, grouping together countries by their total emissions. However, upon testing, binning drastically decreased the variation in countries' colors. This is because the top few countries have emissions that are orders of magnitude higher than the rest of the world, and thus the majority of countries were grouped into the lowest bin. We also considered using an absolute scale for the color gradient where each industry would use the same values for its color scale. However, the difference in emissions between industries is so large that this would have resulted in most countries being colored green for all industries except the highest emitting ones. Thus, we decided to use a relative scale for each industry, where the highest emitting country is always red and the lowest is always green. This allows for better comparison of countries within an industry.</p>
+      <p>The year slider shows how the world's CO2 emissions have changed throughout the years, namely showing which countries have shown progression, regression, or have remained the same. Using the slider itself is good for inspecting a specific year. The play button is good for observing the CO₂ emission changes from year to year.</p>
+      <p>We added a dropdown toggle to show either the aggregation of all industries or a specific industry. Our initial research question did not intend to specifically analyze the industries. However, upon realizing that the primary contributors to CO₂ emissions likely change depending on the industry, we decided that comparing the CO₂ emission data of each industry would provide a more nuanced perspective to the primary part of our research question.</p>
+      <p>The check box toggle that normalizes the data by per-capita allows for understanding how much a country's emissions are directly related to its population size. This toggle effectively levels the playing field when comparing countries of different population sizes.</p>
+      <p>Lastly, we added tooltips when hovering over a country. The color scale does an adequate job at giving the reader general comparison insights, but the reader might want to see the actual values for a specific country. Therefore, we provide the specific CO₂ emissions value along with the global share that the country accounts for. Additionally, when the industry dropdown is set to "All", a country's tooltip also shows a bar graph of its top 6 CO₂ emitting industries. We thought this bar graph was a nice way to summarize the top CO₂ emitting countries from different industries.</p>
+      <h4>Development Process</h4>
+      <p>We had brainstorming sessions multiple times over this 2 week project, where each of us provided great input on what the graph should show, and why. To make the distribution of work even, we each did at least 1 visualization for the checkpoint. And, we all had 2 rounds of creating our own prototypes of the final visualization—once while only having the general vision of our visualization, another iteration after agreeing on which new features to include. The total time this took us to complete was roughly 10 hours. The aspects that took the most time were discussing and agreeing on what features were needed, if the data needed to be normalized or not, and what the best research question was.</p>
+    </section>
+
+    <div id="hover-card" role="tooltip" aria-hidden="true">
       <div class="card-head">
         <strong id="card-name"></strong>
       </div>
-      
-      <!-- Default view for All Industries -->
-      <div class="card-body" id="all-industries-body">
-        
-        <!-- Left column: Bar chart only -->
-        <div>
+      <div class="card-body">
+        <div id="chartArea">
           <p class="panel-title">Top industry</p>
           <svg id="industry-chart"></svg>
         </div>
-        
-        <!-- Right column: Total, Average, and Global share -->
         <div class="avg-panel">
-          <p class="unit">Total CO₂ emissions (metric tons)</p>
-          <p class="value" id="card-all-total"></p>
-
-          <p class="unit share-label">Avg. CO₂ emissions (Metric tons)</p>
+          <p class="unit">Avg. CO2 emissions, Metric ton of CO₂</p>
           <p class="value" id="card-avg"></p>
-          
-          <p class="unit share-label">Global share</p>
+		  <span id="card-total"></span>
+		  <p class="unit share-label">Global share</p>
           <p class="value" id="card-all-pct"></p>
         </div>
-        
-      </div>
-
-      <!-- New view for Single Industry selections -->
-      <div class="card-body-single hidden" id="single-industry-body">
-        <div class="stat-row">
-          <span class="unit">CO₂ emissions (metric tons):</span>
-          <strong class="value" id="card-single-val"></strong>
-        </div>
-        <div class="stat-row">
-          <span class="unit">Global industry share:</span>
-          <strong class="value" id="card-single-pct"></strong>
-        </div>
+	  </div>
       </div>
     </div>
-
-    <script src="attempt.js"></script>
   </body>
 </html>

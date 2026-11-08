@@ -1,0 +1,387 @@
+:root {
+  --ocean: #c5ddf0;
+  --land: #f4f1ea;
+  --border: #d3cdc3;
+  --ink: #1f2937;
+  --muted: #64748b;
+  --card: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  /* Removed height: 100% so the page can scroll naturally */
+}
+
+body {
+  color: var(--ink);
+  background: var(--ocean);
+  font-family: "Segoe UI", Inter, system-ui, sans-serif;
+  /* Removed flex properties from the body */
+}
+
+/* Forces the app to perfectly fit the user's screen before scrolling */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* Styling for the new writeup section */
+.writeup-section {
+  padding: 40px 22px 60px;
+  background: #ffffff;
+  color: var(--ink);
+  border-top: 1px solid #d3cdc3;
+}
+
+.writeup-section h2 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.writeup-section p {
+  max-width: 900px;
+  line-height: 1.6;
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-size: 15px;
+  color: var(--muted);
+}
+
+.writeup-section p:last-child {
+  margin-bottom: 0;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  color: var(--ink);
+  background: var(--ocean);
+  font-family: "Segoe UI", Inter, system-ui, sans-serif;
+}
+
+header {
+  flex: 0 0 auto;
+  padding: 16px 22px 8px;
+  background: #fff;
+}
+
+h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+header p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+#map {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+#map > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.country {
+  stroke: #d3cdc3;
+  stroke-width: 0.5;
+  stroke-linejoin: round;
+}
+
+.country.has-data {
+  cursor: pointer;
+}
+
+.place-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  fill: #1f2937;
+  text-transform: uppercase;
+  paint-order: stroke;
+  stroke: #ffffff;
+  stroke-width: 3.5px;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+#legend {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 168px;
+  padding: 10px 12px 12px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+}
+
+#legend p {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+#legend .hint {
+  margin: 8px 0 4px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+#ramp {
+  height: 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.ramp-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+footer {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 68px;
+  padding: 10px 22px;
+  background: #fff;
+  border-top: 1px solid #e5e7eb;
+}
+
+.year-field {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 640px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.year-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.endpoint {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+#year {
+  flex: 1 1 auto;
+  width: 100%;
+  accent-color: #3b82f6;
+}
+
+#year-label {
+  min-width: 3.4em;
+  padding: 4px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+#play {
+  padding: 7px 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+#play:hover {
+  background: #f8fafc;
+}
+
+#status {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--ink);
+  font-size: 14px;
+}
+
+#hover-card {
+  position: fixed;
+  z-index: 20;
+  display: none;
+  width: min(460px, calc(100vw - 24px));
+  padding: 12px 14px 14px;
+  background: var(--card);
+  border-radius: 6px;
+  box-shadow:
+    0 12px 32px rgba(15, 23, 42, 0.18),
+    0 0 0 1px rgba(15, 23, 42, 0.06);
+  pointer-events: none;
+}
+
+#hover-card.visible {
+  display: block;
+}
+
+.card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #eef2f6;
+  font-size: 14px;
+}
+
+.card-head strong {
+  font-size: 15px;
+}
+
+.card-head span {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.card-body {
+  display: grid;
+  grid-template-columns: 1.35fr 0.8fr;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.panel-title {
+  margin: 0 0 2px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.avg-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-left: 12px;
+  border-left: 1px solid #e5e7eb;
+}
+.total-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-left: 12px;
+  border-left: 1px solid #e5e7eb;
+}
+
+.avg-panel .unit {
+  margin: 0;
+  color: #334155;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.avg-panel .value {
+  margin: 10px 0 0;
+  font-size: 32px;
+  font-weight: 720;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+#industry-chart text {
+  fill: #475569;
+  font-size: 10px;
+}
+
+@media (max-width: 720px) {
+  .card-body {
+    grid-template-columns: 1fr;
+  }
+
+  .avg-panel {
+    padding: 8px 0 0;
+    border-left: 0;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  #legend {
+    display: none;
+  }
+}
+/* Custom Tooltip Container */
+.tooltip-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* The Custom Tooltip Box */
+.custom-tooltip {
+  position: absolute;
+  bottom: calc(100% + 12px); /* Pushes it above the footer item */
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 260px;
+  padding: 8px 12px;
+  background-color: var(--ink); /* Dark tooltip background */
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  text-align: center;
+  border-radius: 6px;
+  pointer-events: none; /* Prevents the tooltip from blocking clicks */
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* The tiny downward arrow at the bottom of the tooltip */
+.custom-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: var(--ink) transparent transparent transparent;
+}
+
+/* Show the tooltip when hovering over the container */
+.tooltip-container:hover .custom-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
