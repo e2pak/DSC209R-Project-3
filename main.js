@@ -99,7 +99,7 @@ const industrySelect = document.getElementById("industries");
 const dataSelect = document.getElementById("per-capita");
 
 let flag = true;
-let file = "../../CO2_emissions.csv";
+let file = "./CO2_emissions.csv";
 let rawRows = null;
 let rawWorld = null;
 let places = [];
@@ -603,7 +603,7 @@ industrySelect.addEventListener("change", (e) => {
 
 dataSelect.addEventListener("change", (e) => {
   if (e.target.checked) file = "./CO2_emissions_per_capita.csv";
-  else file = "../../CO2_emissions.csv";
+  else file = "./CO2_emissions.csv";
   main(file);
 });
 
@@ -633,4 +633,4 @@ function main(file) {
     });
 }
 
-main("../../CO2_emissions.csv");
+main("./CO2_emissions.csv");
